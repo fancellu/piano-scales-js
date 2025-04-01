@@ -50,6 +50,21 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: 'Gb Major (Ionian)', notes: ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'F'] }, // F# is Gb, G# is Ab, A# is Bb, C# is Db, D# is Eb - Needs Enharmonic Correction
         { name: 'Cb Major (Ionian)', notes: ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'] }, // Cb is B, etc. - Needs Enharmonic Correction
 
+        // -- Natural Minor Scales (Aeolian) --
+
+        { name: 'C Natural Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'G#', 'A#'] },
+        { name: 'C# Natural Minor', notes: ['C#', 'D#', 'E', 'F#', 'G#', 'A', 'B'] },
+        { name: 'D Natural Minor', notes: ['D', 'E', 'F', 'G', 'A', 'A#', 'C'] },
+        { name: 'D# Natural Minor', notes: ['D#', 'F', 'F#', 'G#', 'A#', 'B', 'C#'] },
+        { name: 'E Natural Minor', notes: ['E', 'F#', 'G', 'A', 'B', 'C', 'D'] },
+        { name: 'F Natural Minor', notes: ['F', 'G', 'G#', 'A#', 'C', 'C#', 'D#'] },
+        { name: 'F# Natural Minor', notes: ['F#', 'G#', 'A', 'B', 'C#', 'D', 'E'] },
+        { name: 'G Natural Minor', notes: ['G', 'A', 'A#', 'C', 'D', 'D#', 'F'] },
+        { name: 'G# Natural Minor', notes: ['G#', 'A#', 'B', 'C#', 'D#', 'E', 'F#'] },
+        { name: 'A Natural Minor', notes: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] }, // Likely already exists
+        { name: 'A# Natural Minor', notes: ['A#', 'C', 'C#', 'D#', 'F', 'F#', 'G#'] },
+        { name: 'B Natural Minor', notes: ['B', 'C#', 'D', 'E', 'F#', 'G', 'A'] },
+
         { name: 'C Dorian', notes: ['C', 'D', 'D#', 'F', 'G', 'A', 'A#'] }, // D#=Eb, A#=Bb
         { name: 'D Dorian', notes: ['D', 'E', 'F', 'G', 'A', 'B', 'C'] },
         { name: 'G Dorian', notes: ['G', 'A', 'A#', 'C', 'D', 'E', 'F'] },
@@ -77,16 +92,32 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: 'B Locrian', notes: ['B', 'C', 'D', 'E', 'F', 'G', 'A'] },
 
         // --- Harmonic Minor Scales ---
-        { name: 'C Harmonic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'G#', 'B'] }, // D#=Eb, G#=Ab
-        { name: 'A Harmonic Minor', notes: ['A', 'B', 'C', 'D', 'E', 'F', 'G#'] },
-        { name: 'E Harmonic Minor', notes: ['E', 'F#', 'G', 'A', 'B', 'C', 'D#'] },
-        { name: 'G Harmonic Minor', notes: ['G', 'A', 'A#', 'C', 'D', 'D#', 'F#'] }, // A#=Bb, D#=Eb
+        { name: 'C Harmonic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'G#', 'B'] }, // Likely already exists
+        { name: 'C# Harmonic Minor', notes: ['C#', 'D#', 'E', 'F#', 'G#', 'A', 'C'] }, // C is B#
+        { name: 'D Harmonic Minor', notes: ['D', 'E', 'F', 'G', 'A', 'A#', 'C#'] },
+        { name: 'D# Harmonic Minor', notes: ['D#', 'F', 'F#', 'G#', 'A#', 'B', 'D'] }, // D is Cx
+        { name: 'E Harmonic Minor', notes: ['E', 'F#', 'G', 'A', 'B', 'C', 'D#'] }, // Likely already exists
+        { name: 'F Harmonic Minor', notes: ['F', 'G', 'G#', 'A#', 'C', 'C#', 'E'] },
+        { name: 'F# Harmonic Minor', notes: ['F#', 'G#', 'A', 'B', 'C#', 'D', 'F'] }, // F is E#
+        { name: 'G Harmonic Minor', notes: ['G', 'A', 'A#', 'C', 'D', 'D#', 'F#'] }, // Likely already exists
+        { name: 'G# Harmonic Minor', notes: ['G#', 'A#', 'B', 'C#', 'D#', 'E', 'G'] }, // G is Fx#
+        { name: 'A Harmonic Minor', notes: ['A', 'B', 'C', 'D', 'E', 'F', 'G#'] }, // Likely already exists
+        { name: 'A# Harmonic Minor', notes: ['A#', 'C', 'C#', 'D#', 'F', 'F#', 'A'] }, // A is Gx#
+        { name: 'B Harmonic Minor', notes: ['B', 'C#', 'D', 'E', 'F#', 'G', 'A#'] },
 
         // --- Melodic Minor Scales (Ascending - "Jazz Minor") ---
-        { name: 'C Melodic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'A', 'B'] }, // D#=Eb
-        { name: 'A Melodic Minor', notes: ['A', 'B', 'C', 'D', 'E', 'F#', 'G#'] },
-        { name: 'G Melodic Minor', notes: ['G', 'A', 'A#', 'C', 'D', 'E', 'F#'] }, // A#=Bb
-        { name: 'D Melodic Minor', notes: ['D', 'E', 'F', 'G', 'A', 'B', 'C#'] },
+        { name: 'C Melodic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'A', 'B'] }, // Likely already exists
+        { name: 'C# Melodic Minor', notes: ['C#', 'D#', 'E', 'F#', 'G#', 'A#', 'C'] }, // C is B#
+        { name: 'D Melodic Minor', notes: ['D', 'E', 'F', 'G', 'A', 'B', 'C#'] }, // Likely already exists
+        { name: 'D# Melodic Minor', notes: ['D#', 'F', 'F#', 'G#', 'A#', 'C', 'D'] }, // C is B#, D is Cx
+        { name: 'E Melodic Minor', notes: ['E', 'F#', 'G', 'A', 'B', 'C#', 'D#'] },
+        { name: 'F Melodic Minor', notes: ['F', 'G', 'G#', 'A#', 'C', 'D', 'E'] },
+        { name: 'F# Melodic Minor', notes: ['F#', 'G#', 'A', 'B', 'C#', 'D#', 'F'] }, // F is E#
+        { name: 'G Melodic Minor', notes: ['G', 'A', 'A#', 'C', 'D', 'E', 'F#'] }, // Likely already exists
+        { name: 'G# Melodic Minor', notes: ['G#', 'A#', 'B', 'C#', 'D#', 'F', 'G'] }, // F is E#, G is Fx#
+        { name: 'A Melodic Minor', notes: ['A', 'B', 'C', 'D', 'E', 'F#', 'G#'] }, // Likely already exists
+        { name: 'A# Melodic Minor', notes: ['A#', 'C', 'C#', 'D#', 'F', 'G', 'A'] }, // G is Fx#
+        { name: 'B Melodic Minor', notes: ['B', 'C#', 'D', 'E', 'F#', 'G#', 'A#'] },
 
         // --- Pentatonic Scales ---
         { name: 'C Major Pentatonic', notes: ['C', 'D', 'E', 'G', 'A'] },
@@ -120,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: 'A Bebop Minor', notes: ['A', 'B', 'C', 'C#', 'D', 'E', 'F#', 'G'] }, // (Aeolian + #4/b5) - Different flavors exist
 
         // --- Modes of Harmonic Minor ---
-        { name: 'C Harmonic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'G#', 'B'] },
         { name: 'C Locrian #6', notes: ['C', 'C#', 'D#', 'F', 'F#', 'A', 'A#'] },
         { name: 'C Ionian #5', notes: ['C', 'D', 'E', 'F', 'G#', 'A', 'B'] },
         { name: 'C Dorian #4', notes: ['C', 'D', 'D#', 'F#', 'G', 'A', 'A#'] },
@@ -129,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: 'C Super Locrian bb7', notes: ['C', 'C#', 'D#', 'E', 'F#', 'G#', 'A'] },
 
         // --- Modes of Melodic Minor ---
-        { name: 'C Melodic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'A', 'B'] },
         { name: 'C Dorian b2', notes: ['C', 'C#', 'D#', 'F', 'G', 'A', 'A#'] },
         { name: 'C Lydian Augmented', notes: ['C', 'D', 'E', 'F#', 'G#', 'A', 'B'] },
         { name: 'C Lydian Dominant', notes: ['C', 'D', 'E', 'F#', 'G', 'A', 'A#'] },

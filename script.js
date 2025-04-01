@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playbackSpeedInput = document.getElementById('playback-speed');
 
     const enharmonicRadios = document.querySelectorAll('input[name="enharmonic"]'); // Get radio buttons
+    const themeToggleButton = document.getElementById('theme-toggle');
 
     // --- Data ---
     const notesOrder = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Basic map to ensure we store sharps internally (can be expanded if scale data uses flats)
     const noteNameToInternal = (name) => flatToSharp[name] || name;
 
-    // Expanded Scale List (99 scales)
+    // Expanded Scale List (99 scales, maybe I'll add more later if I can be bothered)
     const scales = [
         // --- Major Scales & Modes (Diatonic) ---
         { name: 'C Major (Ionian)', notes: ['C', 'D', 'E', 'F', 'G', 'A', 'B'] },
@@ -187,6 +188,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Functions ---
+
+    // <<< Theme Functions Added >>>
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggleButton.textContent = '🌙'; // Moon icon for dark
+        } else {
+            document.body.classList.remove('dark-mode');
+            themeToggleButton.textContent = '☀️'; // Sun icon for light
+        }
+        currentTheme = theme;
+        localStorage.setItem('theme', theme); // Save preference
+    }
+
+    function toggleTheme() {
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        applyTheme(newTheme);
+    }
+    // <<< End Theme Functions >>>
 
     function getNoteDisplayName(internalNote) {
         if (enharmonicPreference === 'flat' && sharpToFlat[internalNote]) {
@@ -443,6 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    themeToggleButton.addEventListener('click', toggleTheme);
     playChordButton.addEventListener('click', playChord);
     playArpUpButton.addEventListener('click', () => playArpeggio('up'));
     playArpDownButton.addEventListener('click', () => playArpeggio('down'));
@@ -458,6 +479,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Initialisation ---
     enharmonicPreference = document.querySelector('input[name="enharmonic"]:checked').value || 'sharp';
+
+    const savedTheme = localStorage.getItem('theme') || 'light'; // Default to light
+    applyTheme(savedTheme);
+
     generateKeyboard();
     renderScaleList(); // Initial render with all scales
     updateSelectedNotesDisplay(); // Initial render for selected notes field

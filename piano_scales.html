@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Piano Scale Finder</title>
-  <!-- Link to the external CSS file -->
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body> <!-- Body will get the dark-mode class -->
 <div class="app-container">
   <!-- Theme Toggle Button -->
   <button id="theme-toggle" title="Toggle Light/Dark Mode">☀️</button>
   <!-- End Theme Toggle -->
+
   <h1>Piano Scale Finder</h1>
 
   <div id="piano-keyboard">
@@ -41,11 +41,12 @@
     <input type="text" id="scale-filter" placeholder="Filter scales by name...">
     <button id="sort-asc">Sort A-Z</button>
     <button id="sort-desc">Sort Z-A</button>
-    <button id="clear-selection">Clear Selection</button> <!-- Clear Button Added -->
+    <button id="clear-selection">Clear Selection</button>
   </div>
 
   <div id="scale-list-container">
     <h2 id="scale-list-title">Available Scales</h2>
+    <!-- Removed scale-intervals-display -->
     <ul id="scale-list">
       <!-- Scale list will be generated here -->
     </ul>
@@ -61,8 +62,6 @@
   </div>
 </div>
 
-<!-- Link to the external JavaScript file -->
-<!-- Place it at the end of body for faster perceived page load -->
 <script src="script.js"></script>
 </body>
 </html>

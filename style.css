@@ -1,24 +1,74 @@
 :root {
+    /* Color Scheme - Light Mode Defaults */
+    --bg-primary: #f4f7f6;         /* Page background */
+    --bg-secondary: #ffffff;       /* App container background */
+    --bg-tertiary: #e9ecef;        /* Controls background */
+    --bg-input: #f8f9fa;          /* Readonly input background */
+    --text-primary: #333;          /* Main text */
+    --text-secondary: #555;        /* Lighter text, borders */
+    --text-inverted: #eee;         /* Text on dark keys */
+    --text-placeholder: #6c757d;   /* Input placeholder */
+    --border-color: #ccc;          /* Borders */
+    --key-white-bg: #ffffff;       /* White key bg */
+    --key-white-text: #333;        /* White key text */
+    --key-black-bg: #333;          /* Black key bg */
+    --key-black-text: #eee;        /* Black key text */
+    --key-selected-bg: #4a90e2;    /* Selected key bg (both) */
+    --key-selected-text: #ffffff;  /* Selected key text */
+    --key-white-hover: #e0e0e0;    /* White key hover */
+    --key-black-hover: #555;       /* Black key hover */
+    --button-bg: #6c757d;          /* Control button bg */
+    --button-text: #ffffff;        /* Control button text */
+    --button-hover-bg: #5a6268;    /* Control button hover bg */
+    --list-hover-bg: #e0e0e0;      /* Scale list hover */
+    --shadow-color: rgba(0,0,0,0.1);/* Box shadow color */
+    --root-note-border: orange;
+    --root-note-bg: rgba(255, 165, 0, 0.3);
+
+    /* Non-color variables */
     --key-white-width: 50px;
     --key-black-width: 30px;
     --key-white-height: 200px;
     --key-black-height: 120px;
-    --selected-color: #4a90e2; /* A modern blue */
-    --hover-color: #e0e0e0;
-    --black-key-hover: #555;
-    --root-note-indicator: rgba(255, 165, 0, 0.3); /* Subtle orange for root */
-    --background-color: #f4f7f6;
-    --text-color: #333;
-    --border-color: #ccc;
     --container-padding: 20px;
     --border-radius: 8px;
-    --box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    --box-shadow: 0 4px 8px var(--shadow-color);
 }
+
+/* Dark Mode Overrides */
+body.dark-mode {
+    --bg-primary: #212529;         /* Dark page background */
+    --bg-secondary: #343a40;       /* Dark app container */
+    --bg-tertiary: #495057;        /* Dark controls background */
+    --bg-input: #495057;          /* Dark readonly input */
+    --text-primary: #f8f9fa;          /* Light main text */
+    --text-secondary: #adb5bd;        /* Lighter dark text */
+    --text-inverted: #333;         /* Text on (now lighter) dark keys in dark mode? Maybe keep light. */
+    --text-placeholder: #adb5bd;   /* Dark placeholder */
+    --border-color: #6c757d;          /* Dark borders */
+    --key-white-bg: #cccccc;       /* White key bg (slightly darker) */
+    --key-white-text: #212529;        /* White key text */
+    --key-black-bg: #555;          /* Black key bg (slightly lighter) */
+    --key-black-text: #f8f9fa;        /* Black key text */
+    /* --key-selected-bg: #0056b3; */ /* Alt selected color? Keep blue for now */
+    /* --key-selected-text: #ffffff; */
+    --key-white-hover: #b0b0b0;    /* White key hover */
+    --key-black-hover: #777;       /* Black key hover */
+    --button-bg: #5a6268;          /* Dark Control button bg */
+    /* --button-text: #ffffff; */
+    --button-hover-bg: #495057;    /* Dark Control button hover bg */
+    --list-hover-bg: #495057;      /* Dark Scale list hover */
+    --shadow-color: rgba(0,0,0,0.4);/* Darker Box shadow color */
+    /* Root note colors might need adjustment if orange clashes */
+    /* --root-note-border: #ff8c00; */
+    /* --root-note-bg: rgba(255, 140, 0, 0.4); */
+}
+
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-color);
+    background-color: var(--bg-primary); /* Use variable */
+    color: var(--text-primary);       /* Use variable */
     margin: 0;
     padding: var(--container-padding);
     display: flex;
@@ -26,20 +76,44 @@ body {
     align-items: flex-start;
     min-height: 100vh;
     overflow-x: auto;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
 }
 
 .app-container {
-    background-color: #ffffff;
+    background-color: var(--bg-secondary); /* Use variable */
     padding: var(--container-padding);
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     width: 100%;
     max-width: 800px;
     box-sizing: border-box;
+    position: relative; /* Needed for absolute positioning of theme toggle */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
 }
 
+/* Theme Toggle Button Styling */
+#theme-toggle {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: 1px solid transparent; /* Make border transparent initially */
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.5em; /* Make icon larger */
+    padding: 2px 5px;
+    line-height: 1; /* Prevent extra spacing */
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    color: var(--text-secondary); /* Use secondary text color */
+}
+#theme-toggle:hover {
+    background-color: var(--bg-tertiary); /* Use tertiary background on hover */
+    border-color: var(--border-color);
+}
+
+
 h1, h2, h3 {
-    color: var(--text-color);
+    color: var(--text-primary); /* Use variable */
     text-align: center;
     margin-bottom: 1.5em;
 }
@@ -53,15 +127,16 @@ h1, h2, h3 {
     justify-content: center;
     overflow: visible;
     padding-bottom: 10px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color); /* Use variable */
     border-radius: var(--border-radius);
-    background: linear-gradient(to bottom, #eee, #fff);
+    /* Use gradient carefully - may need dark mode adjustment */
+    background: linear-gradient(to bottom, var(--key-white-hover), var(--key-white-bg));
     width: calc(var(--key-white-width) * 7);
     box-sizing: content-box;
 }
 
 .key {
-    border: 1px solid #555;
+    border: 1px solid var(--text-secondary); /* Use variable */
     box-sizing: border-box;
     cursor: pointer;
     display: flex;
@@ -70,35 +145,34 @@ h1, h2, h3 {
     padding-bottom: 10px;
     font-size: 0.8em;
     font-weight: bold;
-    transition: background-color 0.1s ease, box-shadow 0.1s ease;
+    transition: background-color 0.1s ease, box-shadow 0.1s ease, color 0.1s ease;
     user-select: none;
     flex-shrink: 0;
-    position: relative; /* Needed for root note indicator */
+    position: relative;
 }
 
-/* Optional: Root Note Indicator Style */
+/* Root Note Indicator Style */
 .key.root-note::after {
     content: '';
     position: absolute;
-    bottom: 30px; /* Adjust position as needed */
+    bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
     width: 10px;
     height: 10px;
-    background-color: var(--root-note-indicator);
+    background-color: var(--root-note-bg);      /* Use variable */
     border-radius: 50%;
-    border: 1px solid orange;
+    border: 1px solid var(--root-note-border); /* Use variable */
 }
 .key.black.root-note::after {
-    bottom: 10px; /* Adjust position for black keys */
+    bottom: 10px;
 }
-
 
 .key.white {
     width: var(--key-white-width);
     height: var(--key-white-height);
-    background-color: #ffffff;
-    color: #333;
+    background-color: var(--key-white-bg); /* Use variable */
+    color: var(--key-white-text);        /* Use variable */
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
     z-index: 1;
@@ -106,48 +180,49 @@ h1, h2, h3 {
     border-left: none;
 }
 .key.white:first-of-type {
-    border-left: 1px solid #555;
+    border-left: 1px solid var(--text-secondary); /* Use variable */
 }
 .key.white:hover {
-    background-color: var(--hover-color);
+    background-color: var(--key-white-hover); /* Use variable */
 }
 .key.white.selected {
-    background-color: var(--selected-color);
-    color: white;
+    background-color: var(--key-selected-bg);  /* Use variable */
+    color: var(--key-selected-text);         /* Use variable */
     box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
 }
 
 .key.black {
     width: var(--key-black-width);
     height: var(--key-black-height);
-    background-color: #333;
-    color: #eee;
+    background-color: var(--key-black-bg);  /* Use variable */
+    color: var(--key-black-text);         /* Use variable */
     position: absolute;
     z-index: 2;
     border-radius: 0 0 3px 3px;
+    /* Box shadow might need tweaking for dark mode */
     box-shadow: -1px -1px 2px rgba(255,255,255,0.2) inset, 0 -5px 2px 3px rgba(0,0,0,0.6) inset, 0 2px 4px rgba(0,0,0,0.5);
     align-items: flex-end;
     justify-content: center;
     padding-bottom: 5px;
+    border: 1px solid var(--text-secondary); /* Add border for consistency */
 }
 .key.black:hover {
-    background-color: var(--black-key-hover);
+    background-color: var(--key-black-hover); /* Use variable */
 }
 .key.black.selected {
-    background-color: var(--selected-color); /* Use solid blue background */
-    background-image: none; /* Ensure no gradient is applied */
+    background-color: var(--key-selected-bg); /* Use variable */
+    background-image: none;
+    /* Shadow might need dark mode adjustment */
     box-shadow: -1px -1px 2px rgba(255,255,255,0.2) inset, 0 -2px 2px 3px rgba(0,0,0,0.6) inset, 0 1px 2px rgba(0,0,0,0.5);
-    color: white;
+    color: var(--key-selected-text);        /* Use variable */
 }
 
 /* Precise Positioning for Black Keys */
-.key[data-note="C#"] { left: calc(var(--key-white-width) * 1 - var(--key-black-width) / 2); } /* Between C(idx 0) and D(idx 1) */
-.key[data-note="D#"] { left: calc(var(--key-white-width) * 2 - var(--key-black-width) / 2); } /* Between D(idx 1) and E(idx 2) */
-/* E-F Gap - No black key */
-.key[data-note="F#"] { left: calc(var(--key-white-width) * 4 - var(--key-black-width) / 2); } /* Between F(idx 3) and G(idx 4) */
-.key[data-note="G#"] { left: calc(var(--key-white-width) * 5 - var(--key-black-width) / 2); } /* Between G(idx 4) and A(idx 5) */
-.key[data-note="A#"] { left: calc(var(--key-white-width) * 6 - var(--key-black-width) / 2); } /* Between A(idx 5) and B(idx 6) */
-/* B-C Gap - No black key */
+.key[data-note="C#"] { left: calc(var(--key-white-width) * 1 - var(--key-black-width) / 2); }
+.key[data-note="D#"] { left: calc(var(--key-white-width) * 2 - var(--key-black-width) / 2); }
+.key[data-note="F#"] { left: calc(var(--key-white-width) * 4 - var(--key-black-width) / 2); }
+.key[data-note="G#"] { left: calc(var(--key-white-width) * 5 - var(--key-black-width) / 2); }
+.key[data-note="A#"] { left: calc(var(--key-white-width) * 6 - var(--key-black-width) / 2); }
 
 
 /* --- Selected Notes Display --- */
@@ -162,36 +237,41 @@ h1, h2, h3 {
     font-weight: bold;
     white-space: nowrap;
     flex-shrink: 0;
+    color: var(--text-primary); /* Use variable */
 }
 #selected-notes-field {
     flex-grow: 1;
     padding: 6px 10px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color);   /* Use variable */
     border-radius: 4px;
-    background-color: #f8f9fa;
+    background-color: var(--bg-input);       /* Use variable */
     font-family: monospace;
     font-size: 0.9em;
     cursor: text;
+    color: var(--text-primary);           /* Use variable */
 }
 
 /* --- Enharmonic Toggle --- */
 .enharmonic-toggle {
-    margin-bottom: 20px; /* Space below toggle */
-    padding: 10px 15px; /* Padding around toggle */
-    background-color: #f8f9fa; /* Light background */
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    background-color: var(--bg-tertiary);    /* Use variable */
     border-radius: var(--border-radius);
     display: flex;
     align-items: center;
-    gap: 15px; /* Space between items */
+    gap: 15px;
     font-size: 0.9em;
+    color: var(--text-primary);           /* Use variable */
+    transition: background-color 0.3s ease;
+}
+.enharmonic-toggle label {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-primary);           /* Use variable */
 }
 
-.enharmonic-toggle label {
-    cursor: pointer; /* Make labels clickable */
-    display: inline-flex; /* Align radio button and text */
-    align-items: center;
-    gap: 5px; /* Space between radio and text */
-}
 
 /* --- Controls and Scale List --- */
 .controls, .playback-controls {
@@ -200,19 +280,43 @@ h1, h2, h3 {
     gap: 10px;
     margin-bottom: 20px;
     padding: 15px;
-    background-color: #e9ecef;
+    background-color: var(--bg-tertiary);    /* Use variable */
     border-radius: var(--border-radius);
+    transition: background-color 0.3s ease;
 }
 
 .controls input[type="text"],
-.playback-controls input[type="number"],
-.controls button, /* Includes clear button */
-.playback-controls button,
-.playback-controls label {
+.playback-controls input[type="number"] {
     padding: 8px 12px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color);   /* Use variable */
     border-radius: 4px;
     font-size: 0.9em;
+    background-color: var(--bg-secondary);   /* Use variable */
+    color: var(--text-primary);            /* Use variable */
+}
+.controls input[type="text"]::placeholder { /* Style placeholder text */
+    color: var(--text-placeholder);
+}
+
+.playback-controls input[type="number"] {
+    width: 70px;
+}
+
+.controls button,
+.playback-controls button {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    background-color: var(--button-bg);      /* Use variable */
+    color: var(--button-text);         /* Use variable */
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    border: 1px solid var(--button-bg);    /* Use variable */
+}
+.controls button:hover,
+.playback-controls button:hover {
+    background-color: var(--button-hover-bg); /* Use variable */
+    border-color: var(--button-hover-bg); /* Use variable */
 }
 
 .controls input[type="text"] {
@@ -220,37 +324,25 @@ h1, h2, h3 {
     min-width: 150px;
 }
 
-.controls button,
-.playback-controls button {
-    background-color: #6c757d;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    border: 1px solid #6c757d; /* Ensure border matches */
-}
-/* Specific style for clear button if needed, but often covered by .controls button */
-/* #clear-selection { } */
-
-.controls button:hover, .playback-controls button:hover {
-    background-color: #5a6268;
-    border-color: #5a6268;
-}
-
 #scale-list-container {
     margin-top: 20px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color);   /* Use variable */
     border-radius: var(--border-radius);
     padding: 15px;
     max-height: 300px;
     overflow-y: auto;
-    background-color: #fff;
+    background-color: var(--bg-secondary);   /* Use variable */
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 #scale-list-container h2 {
     margin-top: 0;
     margin-bottom: 15px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color); /* Use variable */
     padding-bottom: 10px;
+    color: var(--text-primary);            /* Use variable */
 }
+
+/* REMOVED #scale-intervals-display style */
 
 #scale-list {
     list-style: none;
@@ -260,9 +352,10 @@ h1, h2, h3 {
 
 #scale-list li {
     padding: 8px 10px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color); /* Use variable */
     cursor: pointer;
-    transition: background-color 0.1s ease;
+    transition: background-color 0.1s ease, color 0.1s ease;
+    color: var(--text-primary);            /* Use variable */
 }
 
 #scale-list li:last-child {
@@ -270,12 +363,12 @@ h1, h2, h3 {
 }
 
 #scale-list li:hover {
-    background-color: var(--hover-color);
+    background-color: var(--list-hover-bg); /* Use variable */
 }
 
 #scale-list li.no-match {
     font-style: italic;
-    color: #888;
+    color: var(--text-secondary);          /* Use variable */
     cursor: default;
 }
 
@@ -288,7 +381,5 @@ h1, h2, h3 {
     padding: 0;
     margin-left: 10px;
     margin-right: 5px;
-}
-.playback-controls input[type="number"] {
-    width: 70px;
+    color: var(--text-primary);            /* Use variable */
 }

@@ -1,0 +1,294 @@
+:root {
+    --key-white-width: 50px;
+    --key-black-width: 30px;
+    --key-white-height: 200px;
+    --key-black-height: 120px;
+    --selected-color: #4a90e2; /* A modern blue */
+    --hover-color: #e0e0e0;
+    --black-key-hover: #555;
+    --root-note-indicator: rgba(255, 165, 0, 0.3); /* Subtle orange for root */
+    --background-color: #f4f7f6;
+    --text-color: #333;
+    --border-color: #ccc;
+    --container-padding: 20px;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: var(--container-padding);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    overflow-x: auto;
+}
+
+.app-container {
+    background-color: #ffffff;
+    padding: var(--container-padding);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    width: 100%;
+    max-width: 800px;
+    box-sizing: border-box;
+}
+
+h1, h2, h3 {
+    color: var(--text-color);
+    text-align: center;
+    margin-bottom: 1.5em;
+}
+
+/* --- Piano Keyboard --- */
+#piano-keyboard {
+    display: flex;
+    position: relative;
+    height: var(--key-white-height);
+    margin: 30px auto;
+    justify-content: center;
+    overflow: visible;
+    padding-bottom: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: linear-gradient(to bottom, #eee, #fff);
+    width: calc(var(--key-white-width) * 7);
+    box-sizing: content-box;
+}
+
+.key {
+    border: 1px solid #555;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 10px;
+    font-size: 0.8em;
+    font-weight: bold;
+    transition: background-color 0.1s ease, box-shadow 0.1s ease;
+    user-select: none;
+    flex-shrink: 0;
+    position: relative; /* Needed for root note indicator */
+}
+
+/* Optional: Root Note Indicator Style */
+.key.root-note::after {
+    content: '';
+    position: absolute;
+    bottom: 30px; /* Adjust position as needed */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 10px;
+    background-color: var(--root-note-indicator);
+    border-radius: 50%;
+    border: 1px solid orange;
+}
+.key.black.root-note::after {
+    bottom: 10px; /* Adjust position for black keys */
+}
+
+
+.key.white {
+    width: var(--key-white-width);
+    height: var(--key-white-height);
+    background-color: #ffffff;
+    color: #333;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    z-index: 1;
+    border-top: none;
+    border-left: none;
+}
+.key.white:first-of-type {
+    border-left: 1px solid #555;
+}
+.key.white:hover {
+    background-color: var(--hover-color);
+}
+.key.white.selected {
+    background-color: var(--selected-color);
+    color: white;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+}
+
+.key.black {
+    width: var(--key-black-width);
+    height: var(--key-black-height);
+    background-color: #333;
+    color: #eee;
+    position: absolute;
+    z-index: 2;
+    border-radius: 0 0 3px 3px;
+    box-shadow: -1px -1px 2px rgba(255,255,255,0.2) inset, 0 -5px 2px 3px rgba(0,0,0,0.6) inset, 0 2px 4px rgba(0,0,0,0.5);
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 5px;
+}
+.key.black:hover {
+    background-color: var(--black-key-hover);
+}
+.key.black.selected {
+    background-color: var(--selected-color); /* Use solid blue background */
+    background-image: none; /* Ensure no gradient is applied */
+    box-shadow: -1px -1px 2px rgba(255,255,255,0.2) inset, 0 -2px 2px 3px rgba(0,0,0,0.6) inset, 0 1px 2px rgba(0,0,0,0.5);
+    color: white;
+}
+
+/* Precise Positioning for Black Keys */
+.key[data-note="C#"] { left: calc(var(--key-white-width) * 1 - var(--key-black-width) / 2); } /* Between C(idx 0) and D(idx 1) */
+.key[data-note="D#"] { left: calc(var(--key-white-width) * 2 - var(--key-black-width) / 2); } /* Between D(idx 1) and E(idx 2) */
+/* E-F Gap - No black key */
+.key[data-note="F#"] { left: calc(var(--key-white-width) * 4 - var(--key-black-width) / 2); } /* Between F(idx 3) and G(idx 4) */
+.key[data-note="G#"] { left: calc(var(--key-white-width) * 5 - var(--key-black-width) / 2); } /* Between G(idx 4) and A(idx 5) */
+.key[data-note="A#"] { left: calc(var(--key-white-width) * 6 - var(--key-black-width) / 2); } /* Between A(idx 5) and B(idx 6) */
+/* B-C Gap - No black key */
+
+
+/* --- Selected Notes Display --- */
+.selected-notes-display {
+    margin-top: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.selected-notes-display label {
+    font-weight: bold;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+#selected-notes-field {
+    flex-grow: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    font-family: monospace;
+    font-size: 0.9em;
+    cursor: text;
+}
+
+/* --- Enharmonic Toggle --- */
+.enharmonic-toggle {
+    margin-bottom: 20px; /* Space below toggle */
+    padding: 10px 15px; /* Padding around toggle */
+    background-color: #f8f9fa; /* Light background */
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Space between items */
+    font-size: 0.9em;
+}
+
+.enharmonic-toggle label {
+    cursor: pointer; /* Make labels clickable */
+    display: inline-flex; /* Align radio button and text */
+    align-items: center;
+    gap: 5px; /* Space between radio and text */
+}
+
+/* --- Controls and Scale List --- */
+.controls, .playback-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #e9ecef;
+    border-radius: var(--border-radius);
+}
+
+.controls input[type="text"],
+.playback-controls input[type="number"],
+.controls button, /* Includes clear button */
+.playback-controls button,
+.playback-controls label {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.controls input[type="text"] {
+    flex-grow: 1;
+    min-width: 150px;
+}
+
+.controls button,
+.playback-controls button {
+    background-color: #6c757d;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border: 1px solid #6c757d; /* Ensure border matches */
+}
+/* Specific style for clear button if needed, but often covered by .controls button */
+/* #clear-selection { } */
+
+.controls button:hover, .playback-controls button:hover {
+    background-color: #5a6268;
+    border-color: #5a6268;
+}
+
+#scale-list-container {
+    margin-top: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: #fff;
+}
+#scale-list-container h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+#scale-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#scale-list li {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+#scale-list li:last-child {
+    border-bottom: none;
+}
+
+#scale-list li:hover {
+    background-color: var(--hover-color);
+}
+
+#scale-list li.no-match {
+    font-style: italic;
+    color: #888;
+    cursor: default;
+}
+
+/* --- Playback Controls --- */
+.playback-controls {
+    align-items: center;
+}
+.playback-controls label {
+    border: none;
+    padding: 0;
+    margin-left: 10px;
+    margin-right: 5px;
+}
+.playback-controls input[type="number"] {
+    width: 70px;
+}

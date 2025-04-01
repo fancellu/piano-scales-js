@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Piano Scale Finder</title>
+  <style>
+    :root {
+      --key-white-width: 50px;
+      --key-black-width: 30px;
+      --key-white-height: 200px;
+      --key-black-height: 120px;
+      --selected-color: #4a90e2; /* A modern blue */
+      --hover-color: #e0e0e0;
+      --black-key-hover: #555;
+      --background-color: #f4f7f6;
+      --text-color: #333;
+      --border-color: #ccc;
+      --container-padding: 20px;
+      --border-radius: 8px;
+      --box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: var(--container-padding);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align items to the top */
+      min-height: 100vh;
+      overflow-x: auto; /* Allow horizontal scrolling if needed */
+    }
+
+    .app-container {
+      background-color: #ffffff;
+      padding: var(--container-padding);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      width: 100%;
+      max-width: 800px; /* Max width for better layout control */
+      box-sizing: border-box;
+    }
+
+    h1, h2, h3 {
+      color: var(--text-color);
+      text-align: center;
+      margin-bottom: 1.5em;
+    }
+
+    /* --- Piano Keyboard --- */
+    #piano-keyboard {
+      display: flex;
+      position: relative; /* Needed for positioning black keys */
+      height: var(--key-white-height);
+      margin: 30px auto; /* Center keyboard horizontally, add margin */
+      justify-content: center; /* Center keys if space allows */
+      overflow: visible; /* Allow black keys to overflow visually if needed */
+      padding-bottom: 10px; /* Space for labels */
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      background: linear-gradient(to bottom, #eee, #fff);
+      width: calc(var(--key-white-width) * 7); /* Set explicit width based on 7 white keys */
+      box-sizing: content-box; /* Ensure padding/border don't affect width calc */
+    }
+
+    .key {
+      border: 1px solid #555;
+      box-sizing: border-box;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      padding-bottom: 10px;
+      font-size: 0.8em;
+      font-weight: bold;
+      transition: background-color 0.1s ease, box-shadow 0.1s ease;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .key.white {
+      width: var(--key-white-width);
+      height: var(--key-white-height);
+      background-color: #ffffff;
+      color: #333;
+      border-bottom-left-radius: 5px;
+      border-bottom-right-radius: 5px;
+      z-index: 1;
+      border-top: none; /* Remove top border for cleaner look */
+      border-left: none; /* Remove left border for adjacent keys */
+    }
+    /* Add left border back for the first key */
+    .key.white:first-of-type {
+      border-left: 1px solid #555;
+    }
+
+    .key.white:hover {
+      background-color: var(--hover-color);
+    }
+    .key.white.selected {
+      background-color: var(--selected-color);
+      color: white;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    .key.black {
+      width: var(--key-black-width);
+      height: var(--key-black-height);
+      background-color: #333;
+      color: #eee;
+      position: absolute; /* Position relative to the keyboard container */
+      /* REMOVED: margin-left: calc(var(--key-black-width) / -2); */ /* This was causing the issue */
+      z-index: 2;
+      border-radius: 0 0 3px 3px;
+      box-shadow: -1px -1px 2px rgba(255,255,255,0.2) inset, 0 -5px 2px 3px rgba(0,0,0,0.6) inset, 0 2px 4px rgba(0,0,0,0.5);
+      /* Center text */
+      align-items: flex-end; /* Align text to bottom */
+      justify-content: center; /* Center text horizontally */
+      padding-bottom: 5px; /* Padding for text */
+    }
+
+    .key.black:hover {
+      background-color: var(--black-key-hover);
+    }
+
+    .key.black.selected {
+      background-color: var(--selected-color); /* Use solid blue background */
+      background-image: none; /* Ensure no gradient is applied */
+      /* Keep the inset shadow for a slightly different "pressed" look than white keys */
+      box-shadow: -1px -1px 2px rgba(255,255,255,0.2) inset, 0 -2px 2px 3px rgba(0,0,0,0.6) inset, 0 1px 2px rgba(0,0,0,0.5);
+      color: white; /* Keep text white for contrast */
+    }
+    /* Precise Positioning for Black Keys */
+    /* Calculates the left edge position relative to the start of the keyboard container */
+    /* It positions the center of the black key over the gap between white keys */
+    .key[data-note="C#"] { left: calc(var(--key-white-width) * 1 - var(--key-black-width) / 2); }
+    .key[data-note="D#"] { left: calc(var(--key-white-width) * 2 - var(--key-black-width) / 2); }
+    /* E-F Gap */
+    .key[data-note="F#"] { left: calc(var(--key-white-width) * 3 + var(--key-white-width) / 2 - var(--key-black-width) / 2); } /* Should be between F and G */
+    .key[data-note="G#"] { left: calc(var(--key-white-width) * 4 + var(--key-white-width) / 2 - var(--key-black-width) / 2); } /* Should be between G and A */
+    .key[data-note="A#"] { left: calc(var(--key-white-width) * 5 + var(--key-white-width) / 2 - var(--key-black-width) / 2); } /* Should be between A and B */
+    /* B-C Gap */
+
+
+    /* --- Selected Notes Display --- */
+    .selected-notes-display {
+      margin-top: 15px; /* Add some space above */
+      margin-bottom: 20px; /* Space below */
+      display: flex;
+      align-items: center; /* Vertically align label and input */
+      gap: 8px; /* Space between label and input */
+    }
+
+    .selected-notes-display label {
+      font-weight: bold;
+      white-space: nowrap; /* Prevent label from wrapping */
+      flex-shrink: 0; /* Prevent label from shrinking */
+    }
+
+    #selected-notes-field {
+      flex-grow: 1; /* Allow input to fill remaining space */
+      padding: 6px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: #f8f9fa; /* Slightly off-white to indicate read-only */
+      font-family: monospace; /* Good for displaying note names clearly */
+      font-size: 0.9em;
+      cursor: text; /* Indicate text is selectable */
+    }
+
+    /* --- Controls and Scale List --- */
+    .controls, .playback-controls {
+      display: flex;
+      flex-wrap: wrap; /* Allow wrapping on smaller screens */
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #e9ecef; /* Light grey background */
+      border-radius: var(--border-radius);
+    }
+
+    .controls input[type="text"],
+    .playback-controls input[type="number"],
+    .controls button,
+    .playback-controls button,
+    .playback-controls label {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    .controls input[type="text"] {
+      flex-grow: 1; /* Allow filter input to take available space */
+      min-width: 150px;
+    }
+
+    .controls button, .playback-controls button {
+      background-color: #6c757d; /* Bootstrap secondary color */
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .controls button:hover, .playback-controls button:hover {
+      background-color: #5a6268;
+    }
+
+    #scale-list-container {
+      margin-top: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 15px;
+      max-height: 300px; /* Limit height and make scrollable */
+      overflow-y: auto;
+      background-color: #fff;
+    }
+    #scale-list-container h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+    }
+
+    #scale-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    #scale-list li {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background-color 0.1s ease;
+    }
+
+    #scale-list li:last-child {
+      border-bottom: none;
+    }
+
+    #scale-list li:hover {
+      background-color: var(--hover-color);
+    }
+
+    #scale-list li.no-match {
+      font-style: italic;
+      color: #888;
+      cursor: default;
+    }
+
+    /* --- Playback Controls --- */
+    .playback-controls {
+      align-items: center; /* Vertically align items */
+    }
+    .playback-controls label {
+      border: none;
+      padding: 0;
+      margin-left: 10px; /* Space before the label */
+      margin-right: 5px;
+    }
+    .playback-controls input[type="number"] {
+      width: 70px; /* Fixed width for speed input */
+    }
+
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <h1>Piano Scale Finder</h1>
+
+  <div id="piano-keyboard">
+    <!-- Piano keys will be generated here by JavaScript -->
+  </div>
+
+  <div class="selected-notes-display">
+    <label for="selected-notes-field">Selected:</label>
+    <input type="text" id="selected-notes-field" readonly title="Selected notes (sorted chromatically)">
+  </div>
+
+  <div class="controls">
+    <input type="text" id="scale-filter" placeholder="Filter scales by name...">
+    <button id="sort-asc">Sort A-Z</button>
+    <button id="sort-desc">Sort Z-A</button>
+  </div>
+
+  <div id="scale-list-container">
+    <h2 id="scale-list-title">Available Scales</h2>
+    <ul id="scale-list">
+      <!-- Scale list will be generated here -->
+    </ul>
+  </div>
+
+  <div class="playback-controls">
+    <h3>Playback</h3>
+    <button id="play-chord" title="Play selected notes simultaneously">Play Chord</button>
+    <button id="play-arp-up" title="Play selected notes as an ascending arpeggio">Play Arp Up</button>
+    <button id="play-arp-down" title="Play selected notes as a descending arpeggio">Play Arp Down</button>
+    <label for="playback-speed">Note (ms):</label>
+    <input type="number" id="playback-speed" value="200" min="50" max="1000" step="50">
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const pianoKeyboard = document.getElementById('piano-keyboard');
+    const scaleList = document.getElementById('scale-list');
+    const scaleFilterInput = document.getElementById('scale-filter');
+    const sortAscButton = document.getElementById('sort-asc');
+    const sortDescButton = document.getElementById('sort-desc');
+    const scaleListTitle = document.getElementById('scale-list-title');
+    const selectedNotesField = document.getElementById('selected-notes-field');
+
+    const playChordButton = document.getElementById('play-chord');
+    const playArpUpButton = document.getElementById('play-arp-up');
+    const playArpDownButton = document.getElementById('play-arp-down');
+    const playbackSpeedInput = document.getElementById('playback-speed');
+
+    // --- Data ---
+    const notesOrder = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const noteFrequencies = { // Frequencies for octave 4 (Middle C = C4)
+      'C': 261.63, 'C#': 277.18, 'D': 293.66, 'D#': 311.13, 'E': 329.63,
+      'F': 349.23, 'F#': 369.99, 'G': 392.00, 'G#': 415.30, 'A': 440.00,
+      'A#': 466.16, 'B': 493.88
+    };
+
+    const scales = [
+      // --- Major Scales & Modes (Diatonic) ---
+      // (Listing common roots for convenience, modes follow the pattern)
+      { name: 'C Major (Ionian)', notes: ['C', 'D', 'E', 'F', 'G', 'A', 'B'] },
+      { name: 'G Major (Ionian)', notes: ['G', 'A', 'B', 'C', 'D', 'E', 'F#'] },
+      { name: 'D Major (Ionian)', notes: ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'] },
+      { name: 'A Major (Ionian)', notes: ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'] },
+      { name: 'E Major (Ionian)', notes: ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'] },
+      { name: 'B Major (Ionian)', notes: ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'] },
+      { name: 'F# Major (Ionian)', notes: ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'F'] }, // F is E#
+      { name: 'C# Major (Ionian)', notes: ['C#', 'D#', 'F', 'F#', 'G#', 'A#', 'C'] }, // F is E#, C is B#
+      { name: 'F Major (Ionian)', notes: ['F', 'G', 'A', 'A#', 'C', 'D', 'E'] }, // A# is Bb
+      { name: 'Bb Major (Ionian)', notes: ['A#', 'C', 'D', 'D#', 'F', 'G', 'A'] }, // A# is Bb, D# is Eb
+      { name: 'Eb Major (Ionian)', notes: ['D#', 'F', 'G', 'G#', 'A#', 'C', 'D'] }, // D# is Eb, G# is Ab, A# is Bb
+      { name: 'Ab Major (Ionian)', notes: ['G#', 'A#', 'C', 'C#', 'D#', 'F', 'G'] }, // G# is Ab, A# is Bb, C# is Db, D# is Eb
+      { name: 'Db Major (Ionian)', notes: ['C#', 'D#', 'F', 'F#', 'G#', 'A#', 'C'] }, // C# is Db, D# is Eb, F# is Gb, G# is Ab, A# is Bb
+      { name: 'Gb Major (Ionian)', notes: ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'F'] }, // F# is Gb, G# is Ab, A# is Bb, C# is Db, D# is Eb
+      { name: 'Cb Major (Ionian)', notes: ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'] }, // Cb is B, etc.
+
+      { name: 'C Dorian', notes: ['C', 'D', 'D#', 'F', 'G', 'A', 'A#'] }, // D#=Eb, A#=Bb
+      { name: 'D Dorian', notes: ['D', 'E', 'F', 'G', 'A', 'B', 'C'] },
+      { name: 'G Dorian', notes: ['G', 'A', 'A#', 'C', 'D', 'E', 'F'] },
+      { name: 'A Dorian', notes: ['A', 'B', 'C', 'D', 'E', 'F#', 'G'] },
+
+      { name: 'C Phrygian', notes: ['C', 'C#', 'D#', 'F', 'G', 'G#', 'A#'] }, // C#=Db, D#=Eb, G#=Ab, A#=Bb
+      { name: 'E Phrygian', notes: ['E', 'F', 'G', 'A', 'B', 'C', 'D'] },
+      { name: 'A Phrygian', notes: ['A', 'A#', 'C', 'D', 'E', 'F', 'G'] },
+
+      { name: 'C Lydian', notes: ['C', 'D', 'E', 'F#', 'G', 'A', 'B'] },
+      { name: 'F Lydian', notes: ['F', 'G', 'A', 'B', 'C', 'D', 'E'] },
+      { name: 'G Lydian', notes: ['G', 'A', 'B', 'C#', 'D', 'E', 'F#'] },
+
+      { name: 'C Mixolydian', notes: ['C', 'D', 'E', 'F', 'G', 'A', 'A#'] }, // A#=Bb
+      { name: 'G Mixolydian', notes: ['G', 'A', 'B', 'C', 'D', 'E', 'F'] },
+      { name: 'D Mixolydian', notes: ['D', 'E', 'F#', 'G', 'A', 'B', 'C'] },
+      { name: 'A Mixolydian', notes: ['A', 'B', 'C#', 'D', 'E', 'F#', 'G'] },
+
+      { name: 'C Aeolian (Nat Minor)', notes: ['C', 'D', 'D#', 'F', 'G', 'G#', 'A#'] }, // D#=Eb, G#=Ab, A#=Bb
+      { name: 'A Aeolian (Nat Minor)', notes: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] },
+      { name: 'E Aeolian (Nat Minor)', notes: ['E', 'F#', 'G', 'A', 'B', 'C', 'D'] },
+      { name: 'B Aeolian (Nat Minor)', notes: ['B', 'C#', 'D', 'E', 'F#', 'G', 'A'] },
+      // ... (Natural minor roots from original list also fit here)
+
+      { name: 'C Locrian', notes: ['C', 'C#', 'D#', 'F', 'F#', 'G#', 'A#'] }, // C#=Db, D#=Eb, F#=Gb, G#=Ab, A#=Bb
+      { name: 'B Locrian', notes: ['B', 'C', 'D', 'E', 'F', 'G', 'A'] },
+
+      // --- Harmonic Minor Scales ---
+      { name: 'C Harmonic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'G#', 'B'] }, // D#=Eb, G#=Ab
+      { name: 'A Harmonic Minor', notes: ['A', 'B', 'C', 'D', 'E', 'F', 'G#'] },
+      { name: 'E Harmonic Minor', notes: ['E', 'F#', 'G', 'A', 'B', 'C', 'D#'] },
+      { name: 'G Harmonic Minor', notes: ['G', 'A', 'A#', 'C', 'D', 'D#', 'F#'] }, // A#=Bb, D#=Eb
+
+      // --- Melodic Minor Scales (Ascending - "Jazz Minor") ---
+      { name: 'C Melodic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'A', 'B'] }, // D#=Eb
+      { name: 'A Melodic Minor', notes: ['A', 'B', 'C', 'D', 'E', 'F#', 'G#'] },
+      { name: 'G Melodic Minor', notes: ['G', 'A', 'A#', 'C', 'D', 'E', 'F#'] }, // A#=Bb
+      { name: 'D Melodic Minor', notes: ['D', 'E', 'F', 'G', 'A', 'B', 'C#'] },
+
+      // --- Pentatonic Scales ---
+      { name: 'C Major Pentatonic', notes: ['C', 'D', 'E', 'G', 'A'] },
+      { name: 'G Major Pentatonic', notes: ['G', 'A', 'B', 'D', 'E'] },
+      { name: 'F Major Pentatonic', notes: ['F', 'G', 'A', 'C', 'D'] },
+      { name: 'A Minor Pentatonic', notes: ['A', 'C', 'D', 'E', 'G'] },
+      { name: 'E Minor Pentatonic', notes: ['E', 'G', 'A', 'B', 'D'] },
+      { name: 'C Minor Pentatonic', notes: ['C', 'D#', 'F', 'G', 'A#'] }, // D#=Eb, A#=Bb
+      { name: 'C Egyptian (Suspended Pentatonic)', notes: ['C', 'D', 'F', 'G', 'A#'] }, // A#=Bb
+      { name: 'F Egyptian (Suspended Pentatonic)', notes: ['F', 'G', 'A#', 'C', 'D'] }, // A#=Bb
+
+      // --- Blues Scales ---
+      { name: 'C Minor Blues', notes: ['C', 'D#', 'F', 'F#', 'G', 'A#'] }, // D#=Eb, F#=Gb(blue note), A#=Bb
+      { name: 'A Minor Blues', notes: ['A', 'C', 'D', 'D#', 'E', 'G'] }, // D#=Eb(blue note)
+      { name: 'E Minor Blues', notes: ['E', 'G', 'A', 'A#', 'B', 'D'] }, // A#=Bb(blue note)
+      { name: 'C Major Blues', notes: ['C', 'D', 'D#', 'E', 'G', 'A'] }, // D#=Eb(blue note)
+      { name: 'G Major Blues', notes: ['G', 'A', 'A#', 'B', 'D', 'E'] }, // A#=Bb(blue note)
+      { name: 'A Major Blues', notes: ['A', 'B', 'C', 'C#', 'E', 'F#'] }, // C=Cb(blue note)
+
+      // --- Symmetric Scales ---
+      { name: 'Chromatic', notes: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] },
+      { name: 'C Whole Tone', notes: ['C', 'D', 'E', 'F#', 'G#', 'A#'] },
+      { name: 'C# Whole Tone', notes: ['C#', 'D#', 'F', 'G', 'A', 'B'] }, // F=E#
+      { name: 'C Diminished (WH)', notes: ['C', 'D', 'D#', 'F', 'F#', 'G#', 'A', 'B'] }, // D#=Eb, F#=Gb, G#=Ab
+      { name: 'C Diminished (HW)', notes: ['C', 'C#', 'D#', 'E', 'F#', 'G', 'A', 'A#'] }, // C#=Db, D#=Eb, F#=Gb, A#=Bb
+
+      // --- Bebop Scales ---
+      { name: 'C Bebop Major', notes: ['C', 'D', 'E', 'F', 'G', 'G#', 'A', 'B'] }, // G#=Ab passing tone
+      { name: 'C Bebop Dominant', notes: ['C', 'D', 'E', 'F', 'G', 'A', 'A#', 'B'] }, // A#=Bb (Mixolydian + Major 7th)
+      { name: 'C Bebop Minor (Dorian)', notes: ['C', 'D', 'D#', 'E', 'F', 'G', 'A', 'A#'] }, // D#=Eb, A#=Bb (Dorian + Major 3rd)
+      { name: 'A Bebop Minor', notes: ['A', 'B', 'C', 'C#', 'D', 'E', 'F#', 'G'] }, // (Aeolian + #4/b5) - Different flavors exist
+
+      // --- Modes of Harmonic Minor --- (Using C as root example)
+      { name: 'C Harmonic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'G#', 'B'] }, // 1st Mode (already listed)
+      { name: 'C Locrian #6', notes: ['C', 'C#', 'D#', 'F', 'F#', 'A', 'A#'] }, // 2nd Mode (Rooted on D of C HM) -> C C# D# F F# A A#
+      { name: 'C Ionian #5', notes: ['C', 'D', 'E', 'F', 'G#', 'A', 'B'] }, // 3rd Mode (Rooted on Eb of C HM) -> C D E F G# A B
+      { name: 'C Dorian #4', notes: ['C', 'D', 'D#', 'F#', 'G', 'A', 'A#'] }, // 4th Mode (Rooted on F of C HM) -> C D D# F# G A A#
+      { name: 'C Phrygian Dominant', notes: ['C', 'C#', 'E', 'F', 'G', 'G#', 'A#'] }, // 5th Mode (Rooted on G of C HM) -> C C# E F G G# A# (aka Phrygian Major)
+      { name: 'C Lydian #2', notes: ['C', 'D#', 'E', 'F#', 'G', 'A#', 'B'] }, // 6th Mode (Rooted on Ab of C HM) -> C D# E F# G A# B
+      { name: 'C Super Locrian bb7', notes: ['C', 'C#', 'D#', 'E', 'F#', 'G#', 'A'] }, // 7th Mode (Rooted on B of C HM) -> C C# D# E F# G# A (aka Altered Diminished)
+
+      // --- Modes of Melodic Minor --- (Using C as root example, Ascending/Jazz Minor)
+      { name: 'C Melodic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'A', 'B'] }, // 1st Mode (already listed)
+      { name: 'C Dorian b2', notes: ['C', 'C#', 'D#', 'F', 'G', 'A', 'A#'] }, // 2nd Mode (Rooted on D of C MM) -> C C# D# F G A A# (aka Phrygian #6)
+      { name: 'C Lydian Augmented', notes: ['C', 'D', 'E', 'F#', 'G#', 'A', 'B'] }, // 3rd Mode (Rooted on Eb of C MM) -> C D E F# G# A B
+      { name: 'C Lydian Dominant', notes: ['C', 'D', 'E', 'F#', 'G', 'A', 'A#'] }, // 4th Mode (Rooted on F of C MM) -> C D E F# G A A# (aka Mixolydian #4, Overtone Scale)
+      { name: 'C Mixolydian b6', notes: ['C', 'D', 'E', 'F', 'G', 'G#', 'A#'] }, // 5th Mode (Rooted on G of C MM) -> C D E F G G# A# (aka Aeolian Dominant)
+      { name: 'C Locrian #2', notes: ['C', 'D', 'D#', 'F', 'F#', 'G#', 'A#'] }, // 6th Mode (Rooted on A of C MM) -> C D D# F F# G# A# (aka Half-Diminished)
+      { name: 'C Altered Scale', notes: ['C', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'] }, // 7th Mode (Rooted on B of C MM) -> C C# D# E F# G# A# (aka Super Locrian, Diminished Whole Tone)
+
+      // --- "Exotic" / World / Other Scales --- (Examples rooted on C)
+      { name: 'C Hungarian Minor', notes: ['C', 'D', 'D#', 'F#', 'G', 'G#', 'B'] }, // D#=Eb, G#=Ab
+      { name: 'C Hungarian Major', notes: ['C', 'D#', 'E', 'F#', 'G', 'A', 'A#'] }, // D#=Eb(#2), A#=Bb
+      { name: 'C Neapolitan Minor', notes: ['C', 'C#', 'D#', 'F', 'G', 'G#', 'B'] }, // C#=Db, D#=Eb, G#=Ab
+      { name: 'C Neapolitan Major', notes: ['C', 'C#', 'D#', 'F', 'G', 'A', 'B'] }, // C#=Db, D#=Eb
+      { name: 'C Persian', notes: ['C', 'C#', 'E', 'F', 'F#', 'G#', 'B'] }, // C#=Db, F#=Gb, G#=Ab
+      { name: 'C Enigmatic', notes: ['C', 'C#', 'E', 'F#', 'G#', 'A#', 'B'] }, // C#=Db
+      { name: 'C Spanish Gypsy', notes: ['C', 'C#', 'E', 'F', 'G', 'G#', 'A#'] }, // Same as Phrygian Dominant
+      { name: 'C Spanish 8 Tone', notes: ['C', 'C#', 'D#', 'E', 'F', 'F#', 'G#', 'A#'] }, // C#=Db, D#=Eb, F#=Gb, G#=Ab, A#=Bb
+      { name: 'C Arabian', notes: ['C', 'D', 'E', 'F', 'F#', 'G#', 'A#'] }, // F#=Gb, G#=Ab, A#=Bb
+      { name: 'C Balinese (Pelog)', notes: ['C', 'C#', 'D#', 'G', 'G#'] }, // Pelog varies, this is one 5-tone version
+      { name: 'C Japanese (Insen)', notes: ['C', 'C#', 'F', 'G', 'A#'] }, // C#=Db, A#=Bb
+      { name: 'C Japanese (Hirajoshi)', notes: ['C', 'D', 'D#', 'G', 'G#'] }, // D#=Eb, G#=Ab
+      { name: 'C Japanese (Iwato)', notes: ['C', 'C#', 'F', 'F#', 'A#'] }, // C#=Db, F#=Gb, A#=Bb
+      { name: 'C Prometheus', notes: ['C', 'D', 'E', 'F#', 'A', 'A#'] }, // A#=Bb
+      { name: 'C Scriabin', notes: ['C', 'C#', 'E', 'F#', 'A', 'A#'] }, // Same structure as Lydian Dominant but often used differently
+      { name: 'C Tritone', notes: ['C', 'C#', 'E', 'F#', 'G#', 'A#'] }, // C#=Db, G#=Ab, A#=Bb
+      { name: 'C Two-Semitone Tritone', notes: ['C', 'C#', 'D', 'F#', 'G', 'G#'] }, // G#=Ab
+      { name: 'C Augmented', notes: ['C', 'D#', 'E', 'G', 'G#', 'B'] }, // D#=Eb, G#=Ab
+      { name: 'C Double Harmonic Major', notes: ['C', 'C#', 'E', 'F', 'G', 'G#', 'B'] }, // C#=Db, G#=Ab (aka Byzantine)
+
+    ];
+
+    // --- State ---
+    let selectedNotes = new Set();
+    let currentSortOrder = 'asc'; // 'asc' or 'desc'
+
+    // --- Audio Context ---
+    let audioContext = null;
+    function getAudioContext() {
+      if (!audioContext) {
+        try {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+          console.error("Web Audio API is not supported in this browser");
+          alert("Web Audio API is not supported in this browser. Playback features will be disabled.");
+          // Disable playback buttons if context fails
+          playChordButton.disabled = true;
+          playArpUpButton.disabled = true;
+          playArpDownButton.disabled = true;
+          playbackSpeedInput.disabled = true;
+        }
+      }
+      return audioContext;
+    }
+
+    // --- Functions ---
+
+    // Generate Piano Keys
+    function generateKeyboard() {
+      pianoKeyboard.innerHTML = ''; // Clear existing keys
+      let whiteKeyIndex = 0;
+      notesOrder.forEach(note => {
+        const keyElement = document.createElement('div');
+        keyElement.classList.add('key');
+        keyElement.dataset.note = note;
+        keyElement.textContent = note; // Display note name
+
+        if (note.includes('#')) {
+          keyElement.classList.add('black');
+          // Calculate left position based on the previous white key
+          const leftPosition = `calc(var(--key-white-width) * ${whiteKeyIndex} - (var(--key-black-width) / 2))`;
+          keyElement.style.left = leftPosition;
+        } else {
+          keyElement.classList.add('white');
+          // Add specific margin adjustments if needed for visual spacing, e.g., around B/C and E/F
+          if (note === 'C' && whiteKeyIndex > 0) keyElement.style.marginLeft = '-1px'; // Adjust overlap slightly
+          if (note === 'F') keyElement.style.marginLeft = '-1px'; // Adjust overlap slightly
+          whiteKeyIndex++;
+        }
+
+        keyElement.addEventListener('click', handleKeyClick);
+        pianoKeyboard.appendChild(keyElement);
+      });
+    }
+
+    // Handle Key Clicks
+    function handleKeyClick(event) {
+      const note = event.target.dataset.note;
+      if (selectedNotes.has(note)) {
+        selectedNotes.delete(note);
+        event.target.classList.remove('selected');
+      } else {
+        selectedNotes.add(note);
+        event.target.classList.add('selected');
+      }
+      renderScaleList();
+      updateSelectedNotesDisplay();
+    }
+
+    function updateSelectedNotesDisplay() {
+      const sortedSelected = sortNotesChromatically(selectedNotes); // Reuse existing sort function
+      selectedNotesField.value = sortedSelected.join(', '); // Join with comma and space
+    }
+
+    // Handle Scale Clicks
+    function handleScaleClick(event) {
+      const scaleName = event.target.dataset.scaleName;
+      const selectedScale = scales.find(s => s.name === scaleName);
+
+      if (selectedScale) {
+        // Clear current selection (visually and in the set)
+        clearAllSelections();
+
+        // Select notes of the clicked scale
+        selectedScale.notes.forEach(note => {
+          selectedNotes.add(note);
+          const keyElement = pianoKeyboard.querySelector(`.key[data-note="${note}"]`);
+          if (keyElement) {
+            keyElement.classList.add('selected');
+          }
+        });
+
+        // Refresh the scale list based on the new selection
+        renderScaleList();
+        updateSelectedNotesDisplay();
+      }
+    }
+
+    // Clear All Selections
+    function clearAllSelections() {
+      selectedNotes.clear();
+      document.querySelectorAll('.key.selected').forEach(k => k.classList.remove('selected'));
+      updateSelectedNotesDisplay();
+    }
+
+    // Render Scale List
+    function renderScaleList() {
+      const filterText = scaleFilterInput.value.toLowerCase();
+
+      // 1. Filter scales based on selected notes
+      let matchingScales;
+      if (selectedNotes.size === 0) {
+        matchingScales = [...scales]; // Show all scales if none selected
+        scaleListTitle.textContent = `All Scales (${scales.length})`;
+      } else {
+        const selectedNotesArray = Array.from(selectedNotes);
+        matchingScales = scales.filter(scale => {
+          // Check if the scale's notes contain ALL of the selected notes
+          return selectedNotesArray.every(selectedNote => scale.notes.includes(selectedNote));
+        });
+        scaleListTitle.textContent = `Scales Containing Selected Notes (${matchingScales.length})`;
+      }
+
+      // 2. Filter by name input
+      if (filterText) {
+        matchingScales = matchingScales.filter(scale => scale.name.toLowerCase().includes(filterText));
+      }
+
+      // 3. Sort scales
+      matchingScales.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (currentSortOrder === 'asc') {
+          return nameA.localeCompare(nameB);
+        } else {
+          return nameB.localeCompare(nameA);
+        }
+      });
+
+      // 4. Display scales
+      scaleList.innerHTML = ''; // Clear previous list
+      if (matchingScales.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No matching scales found.';
+        li.classList.add('no-match');
+        scaleList.appendChild(li);
+      } else {
+        matchingScales.forEach(scale => {
+          const li = document.createElement('li');
+          li.textContent = scale.name;
+          li.dataset.scaleName = scale.name; // Store name for click handler
+          li.addEventListener('click', handleScaleClick);
+          scaleList.appendChild(li);
+        });
+      }
+    }
+
+    // Play a single note
+    function playNote(frequency, durationSeconds, startTime) {
+      const ctx = getAudioContext();
+      if (!ctx) return; // Exit if context is not available
+
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain(); // Use GainNode for smoother start/stop
+
+      oscillator.type = 'sine'; // 'sine', 'square', 'sawtooth', 'triangle'
+      oscillator.frequency.setValueAtTime(frequency, startTime);
+
+      // Simple envelope: fade in/out slightly to avoid clicks
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.5, startTime + 0.01); // Quick fade in
+      gainNode.gain.setValueAtTime(0.5, startTime + durationSeconds - 0.05); // Hold
+      gainNode.gain.linearRampToValueAtTime(0, startTime + durationSeconds); // Fade out
+
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + durationSeconds);
+    }
+
+    // Sort notes chromatically for arpeggios
+    function sortNotesChromatically(notes) {
+      return [...notes].sort((a, b) => notesOrder.indexOf(a) - notesOrder.indexOf(b));
+    }
+
+    // Play Chord
+    function playChord() {
+      const ctx = getAudioContext();
+      if (!ctx || selectedNotes.size === 0) return;
+
+      const notesToPlay = Array.from(selectedNotes);
+      const now = ctx.currentTime;
+      const duration = 1.0; // Chord duration in seconds
+
+      notesToPlay.forEach(note => {
+        const freq = noteFrequencies[note];
+        if (freq) {
+          playNote(freq, duration, now);
+        }
+      });
+    }
+
+    // Play Arpeggio
+    function playArpeggio(direction = 'up') {
+      const ctx = getAudioContext();
+      if (!ctx || selectedNotes.size === 0) return;
+
+      const speedMs = parseInt(playbackSpeedInput.value, 10) || 200;
+      const noteDuration = speedMs / 1000; // Slightly less than the interval for separation
+      const intervalSeconds = speedMs / 1000;
+      const now = ctx.currentTime;
+
+      let sortedNotes = sortNotesChromatically(selectedNotes);
+      if (direction === 'down') {
+        sortedNotes.reverse();
+      }
+
+      sortedNotes.forEach((note, index) => {
+        const freq = noteFrequencies[note];
+        if (freq) {
+          const startTime = now + index * intervalSeconds;
+          playNote(freq, noteDuration * 1.5, startTime); // Play note slightly longer than interval
+        }
+      });
+    }
+
+    // --- Event Listeners ---
+    scaleFilterInput.addEventListener('input', renderScaleList);
+    sortAscButton.addEventListener('click', () => {
+      currentSortOrder = 'asc';
+      renderScaleList();
+    });
+    sortDescButton.addEventListener('click', () => {
+      currentSortOrder = 'desc';
+      renderScaleList();
+    });
+
+    playChordButton.addEventListener('click', playChord);
+    playArpUpButton.addEventListener('click', () => playArpeggio('up'));
+    playArpDownButton.addEventListener('click', () => playArpeggio('down'));
+
+    // Resume AudioContext on first user interaction (solves browser autoplay policies)
+    function initAudioContextOnInteraction() {
+      const ctx = getAudioContext();
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      // Remove this listener after the first interaction
+      document.body.removeEventListener('click', initAudioContextOnInteraction);
+      document.body.removeEventListener('keydown', initAudioContextOnInteraction);
+    }
+    document.body.addEventListener('click', initAudioContextOnInteraction, { once: true });
+    document.body.addEventListener('keydown', initAudioContextOnInteraction, { once: true });
+
+
+    // --- Initialisation ---
+    generateKeyboard();
+    renderScaleList(); // Initial render with all scales
+    updateSelectedNotesDisplay();
+  });
+</script>
+</body>
+</html>

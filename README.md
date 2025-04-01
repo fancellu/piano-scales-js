@@ -38,7 +38,7 @@ A simple, interactive single-page web application designed to help users explore
 
 ## Preview
 
-[Click here to Preview](http://htmlpreview.github.io/?https://github.com/fancellu/piano-scales-js/blob/main/index.html)
+[Click here to Preview](http://htmlpreview.github.io/?https://github.com/fancellu/piano-scales-js/blob/main/piano_scales.html)
 
 ## File Structure
 

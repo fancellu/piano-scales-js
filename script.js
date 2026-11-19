@@ -35,162 +35,106 @@ document.addEventListener('DOMContentLoaded', () => {
     // Basic map to ensure we store sharps internally (can be expanded if scale data uses flats)
     const noteNameToInternal = (name) => flatToSharp[name] || name;
 
-    // Expanded Scale List (99 scales, maybe I'll add more later if I can be bothered)
-    const scales = [
-        // --- Major Scales & Modes (Diatonic) ---
-        { name: 'C Major (Ionian)', notes: ['C', 'D', 'E', 'F', 'G', 'A', 'B'] },
-        { name: 'G Major (Ionian)', notes: ['G', 'A', 'B', 'C', 'D', 'E', 'F#'] },
-        { name: 'D Major (Ionian)', notes: ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'] },
-        { name: 'A Major (Ionian)', notes: ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'] },
-        { name: 'E Major (Ionian)', notes: ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'] },
-        { name: 'B Major (Ionian)', notes: ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'] },
-        { name: 'F# Major (Ionian)', notes: ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'F'] }, // F is E#
-        { name: 'C# Major (Ionian)', notes: ['C#', 'D#', 'F', 'F#', 'G#', 'A#', 'C'] }, // F is E#, C is B#
-        { name: 'F Major (Ionian)', notes: ['F', 'G', 'A', 'A#', 'C', 'D', 'E'] }, // A# is Bb - Needs Enharmonic Correction in Data
-        { name: 'Bb Major (Ionian)', notes: ['A#', 'C', 'D', 'D#', 'F', 'G', 'A'] }, // A# is Bb, D# is Eb - Needs Enharmonic Correction
-        { name: 'Eb Major (Ionian)', notes: ['D#', 'F', 'G', 'G#', 'A#', 'C', 'D'] }, // D# is Eb, G# is Ab, A# is Bb - Needs Enharmonic Correction
-        { name: 'Ab Major (Ionian)', notes: ['G#', 'A#', 'C', 'C#', 'D#', 'F', 'G'] }, // G# is Ab, A# is Bb, C# is Db, D# is Eb - Needs Enharmonic Correction
-        { name: 'Db Major (Ionian)', notes: ['C#', 'D#', 'F', 'F#', 'G#', 'A#', 'C'] }, // C# is Db, D# is Eb, F# is Gb, G# is Ab, A# is Bb - Needs Enharmonic Correction
-        { name: 'Gb Major (Ionian)', notes: ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'F'] }, // F# is Gb, G# is Ab, A# is Bb, C# is Db, D# is Eb - Needs Enharmonic Correction
-        { name: 'Cb Major (Ionian)', notes: ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'] }, // Cb is B, etc. - Needs Enharmonic Correction
+    // Scale types defined once as semitone offsets from the root, then generated in all
+    // 12 keys. Notes are stored in internal sharp notation; names are built at display
+    // time so the root follows the sharps/flats preference.
+    const scaleTypes = [
+        // --- Major scale & its modes (diatonic) ---
+        { type: 'Major (Ionian)', formula: [0, 2, 4, 5, 7, 9, 11] },
+        { type: 'Dorian', formula: [0, 2, 3, 5, 7, 9, 10] },
+        { type: 'Phrygian', formula: [0, 1, 3, 5, 7, 8, 10] },
+        { type: 'Lydian', formula: [0, 2, 4, 6, 7, 9, 11] },
+        { type: 'Mixolydian', formula: [0, 2, 4, 5, 7, 9, 10] },
+        { type: 'Natural Minor (Aeolian)', formula: [0, 2, 3, 5, 7, 8, 10] },
+        { type: 'Locrian', formula: [0, 1, 3, 5, 6, 8, 10] },
 
-        // -- Natural Minor Scales (Aeolian) --
+        // --- Harmonic minor & its modes ---
+        { type: 'Harmonic Minor', formula: [0, 2, 3, 5, 7, 8, 11] },
+        { type: 'Locrian #6', formula: [0, 1, 3, 5, 6, 9, 10] },
+        { type: 'Ionian #5', formula: [0, 2, 4, 5, 8, 9, 11] },
+        { type: 'Dorian #4 (Ukrainian Dorian)', formula: [0, 2, 3, 6, 7, 9, 10] },
+        { type: 'Phrygian Dominant (Spanish Gypsy)', formula: [0, 1, 4, 5, 7, 8, 10] },
+        { type: 'Lydian #2', formula: [0, 3, 4, 6, 7, 9, 11] },
+        { type: 'Super Locrian bb7 (Ultralocrian)', formula: [0, 1, 3, 4, 6, 8, 9] },
 
-        { name: 'C Natural Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'G#', 'A#'] },
-        { name: 'C# Natural Minor', notes: ['C#', 'D#', 'E', 'F#', 'G#', 'A', 'B'] },
-        { name: 'D Natural Minor', notes: ['D', 'E', 'F', 'G', 'A', 'A#', 'C'] },
-        { name: 'D# Natural Minor', notes: ['D#', 'F', 'F#', 'G#', 'A#', 'B', 'C#'] },
-        { name: 'E Natural Minor', notes: ['E', 'F#', 'G', 'A', 'B', 'C', 'D'] },
-        { name: 'F Natural Minor', notes: ['F', 'G', 'G#', 'A#', 'C', 'C#', 'D#'] },
-        { name: 'F# Natural Minor', notes: ['F#', 'G#', 'A', 'B', 'C#', 'D', 'E'] },
-        { name: 'G Natural Minor', notes: ['G', 'A', 'A#', 'C', 'D', 'D#', 'F'] },
-        { name: 'G# Natural Minor', notes: ['G#', 'A#', 'B', 'C#', 'D#', 'E', 'F#'] },
-        { name: 'A Natural Minor', notes: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] }, // Likely already exists
-        { name: 'A# Natural Minor', notes: ['A#', 'C', 'C#', 'D#', 'F', 'F#', 'G#'] },
-        { name: 'B Natural Minor', notes: ['B', 'C#', 'D', 'E', 'F#', 'G', 'A'] },
+        // --- Melodic minor (ascending, "jazz minor") & its modes ---
+        { type: 'Melodic Minor', formula: [0, 2, 3, 5, 7, 9, 11] },
+        { type: 'Dorian b2', formula: [0, 1, 3, 5, 7, 9, 10] },
+        { type: 'Lydian Augmented', formula: [0, 2, 4, 6, 8, 9, 11] },
+        { type: 'Lydian Dominant', formula: [0, 2, 4, 6, 7, 9, 10] },
+        { type: 'Mixolydian b6', formula: [0, 2, 4, 5, 7, 8, 10] },
+        { type: 'Locrian #2 (Half-Diminished)', formula: [0, 2, 3, 5, 6, 8, 10] },
+        { type: 'Altered (Super Locrian)', formula: [0, 1, 3, 4, 6, 8, 10] },
 
-        { name: 'C Dorian', notes: ['C', 'D', 'D#', 'F', 'G', 'A', 'A#'] }, // D#=Eb, A#=Bb
-        { name: 'D Dorian', notes: ['D', 'E', 'F', 'G', 'A', 'B', 'C'] },
-        { name: 'G Dorian', notes: ['G', 'A', 'A#', 'C', 'D', 'E', 'F'] },
-        { name: 'A Dorian', notes: ['A', 'B', 'C', 'D', 'E', 'F#', 'G'] },
+        // --- Harmonic major & its modes ---
+        { type: 'Harmonic Major', formula: [0, 2, 4, 5, 7, 8, 11] },
+        { type: 'Dorian b5', formula: [0, 2, 3, 5, 6, 9, 10] },
+        { type: 'Phrygian b4', formula: [0, 1, 3, 4, 7, 8, 10] },
+        { type: 'Lydian b3', formula: [0, 2, 3, 6, 7, 9, 11] },
+        { type: 'Mixolydian b2', formula: [0, 1, 4, 5, 7, 9, 10] },
+        { type: 'Lydian Augmented #2', formula: [0, 3, 4, 6, 8, 9, 11] },
+        { type: 'Locrian bb7', formula: [0, 1, 3, 5, 6, 8, 9] },
 
-        { name: 'C Phrygian', notes: ['C', 'C#', 'D#', 'F', 'G', 'G#', 'A#'] }, // C#=Db, D#=Eb, G#=Ab, A#=Bb
-        { name: 'E Phrygian', notes: ['E', 'F', 'G', 'A', 'B', 'C', 'D'] },
-        { name: 'A Phrygian', notes: ['A', 'A#', 'C', 'D', 'E', 'F', 'G'] },
+        // --- Pentatonic, hexatonic & blues ---
+        { type: 'Major Pentatonic', formula: [0, 2, 4, 7, 9] },
+        { type: 'Minor Pentatonic', formula: [0, 3, 5, 7, 10] },
+        { type: 'Egyptian (Suspended Pentatonic)', formula: [0, 2, 5, 7, 10] },
+        { type: 'Dominant Pentatonic', formula: [0, 2, 4, 7, 10] },
+        { type: 'Major Hexatonic', formula: [0, 2, 4, 5, 7, 9] },
+        { type: 'Minor Hexatonic', formula: [0, 2, 3, 5, 7, 10] },
+        { type: 'Major Blues', formula: [0, 2, 3, 4, 7, 9] },
+        { type: 'Minor Blues', formula: [0, 3, 5, 6, 7, 10] },
 
-        { name: 'C Lydian', notes: ['C', 'D', 'E', 'F#', 'G', 'A', 'B'] },
-        { name: 'F Lydian', notes: ['F', 'G', 'A', 'B', 'C', 'D', 'E'] },
-        { name: 'G Lydian', notes: ['G', 'A', 'B', 'C#', 'D', 'E', 'F#'] },
+        // --- Symmetric ---
+        { type: 'Whole Tone', formula: [0, 2, 4, 6, 8, 10] },
+        { type: 'Diminished (Whole-Half)', formula: [0, 2, 3, 5, 6, 8, 9, 11] },
+        { type: 'Diminished (Half-Whole)', formula: [0, 1, 3, 4, 6, 7, 9, 10] },
+        { type: 'Augmented', formula: [0, 3, 4, 7, 8, 11] },
 
-        { name: 'C Mixolydian', notes: ['C', 'D', 'E', 'F', 'G', 'A', 'A#'] }, // A#=Bb
-        { name: 'G Mixolydian', notes: ['G', 'A', 'B', 'C', 'D', 'E', 'F'] },
-        { name: 'D Mixolydian', notes: ['D', 'E', 'F#', 'G', 'A', 'B', 'C'] },
-        { name: 'A Mixolydian', notes: ['A', 'B', 'C#', 'D', 'E', 'F#', 'G'] },
+        // --- Bebop ---
+        { type: 'Bebop Major', formula: [0, 2, 4, 5, 7, 8, 9, 11] },
+        { type: 'Bebop Dominant', formula: [0, 2, 4, 5, 7, 9, 10, 11] },
+        { type: 'Bebop Dorian', formula: [0, 2, 3, 4, 5, 7, 9, 10] },
+        { type: 'Bebop Melodic Minor', formula: [0, 2, 3, 5, 7, 8, 9, 11] },
+        { type: 'Bebop Harmonic Minor', formula: [0, 2, 3, 5, 7, 8, 10, 11] },
 
-        { name: 'C Aeolian (Nat Minor)', notes: ['C', 'D', 'D#', 'F', 'G', 'G#', 'A#'] }, // D#=Eb, G#=Ab, A#=Bb
-        { name: 'A Aeolian (Nat Minor)', notes: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] },
-        { name: 'E Aeolian (Nat Minor)', notes: ['E', 'F#', 'G', 'A', 'B', 'C', 'D'] },
-        { name: 'B Aeolian (Nat Minor)', notes: ['B', 'C#', 'D', 'E', 'F#', 'G', 'A'] },
-
-        { name: 'C Locrian', notes: ['C', 'C#', 'D#', 'F', 'F#', 'G#', 'A#'] }, // C#=Db, D#=Eb, F#=Gb, G#=Ab, A#=Bb
-        { name: 'B Locrian', notes: ['B', 'C', 'D', 'E', 'F', 'G', 'A'] },
-
-        // --- Harmonic Minor Scales ---
-        { name: 'C Harmonic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'G#', 'B'] }, // Likely already exists
-        { name: 'C# Harmonic Minor', notes: ['C#', 'D#', 'E', 'F#', 'G#', 'A', 'C'] }, // C is B#
-        { name: 'D Harmonic Minor', notes: ['D', 'E', 'F', 'G', 'A', 'A#', 'C#'] },
-        { name: 'D# Harmonic Minor', notes: ['D#', 'F', 'F#', 'G#', 'A#', 'B', 'D'] }, // D is Cx
-        { name: 'E Harmonic Minor', notes: ['E', 'F#', 'G', 'A', 'B', 'C', 'D#'] }, // Likely already exists
-        { name: 'F Harmonic Minor', notes: ['F', 'G', 'G#', 'A#', 'C', 'C#', 'E'] },
-        { name: 'F# Harmonic Minor', notes: ['F#', 'G#', 'A', 'B', 'C#', 'D', 'F'] }, // F is E#
-        { name: 'G Harmonic Minor', notes: ['G', 'A', 'A#', 'C', 'D', 'D#', 'F#'] }, // Likely already exists
-        { name: 'G# Harmonic Minor', notes: ['G#', 'A#', 'B', 'C#', 'D#', 'E', 'G'] }, // G is Fx#
-        { name: 'A Harmonic Minor', notes: ['A', 'B', 'C', 'D', 'E', 'F', 'G#'] }, // Likely already exists
-        { name: 'A# Harmonic Minor', notes: ['A#', 'C', 'C#', 'D#', 'F', 'F#', 'A'] }, // A is Gx#
-        { name: 'B Harmonic Minor', notes: ['B', 'C#', 'D', 'E', 'F#', 'G', 'A#'] },
-
-        // --- Melodic Minor Scales (Ascending - "Jazz Minor") ---
-        { name: 'C Melodic Minor', notes: ['C', 'D', 'D#', 'F', 'G', 'A', 'B'] }, // Likely already exists
-        { name: 'C# Melodic Minor', notes: ['C#', 'D#', 'E', 'F#', 'G#', 'A#', 'C'] }, // C is B#
-        { name: 'D Melodic Minor', notes: ['D', 'E', 'F', 'G', 'A', 'B', 'C#'] }, // Likely already exists
-        { name: 'D# Melodic Minor', notes: ['D#', 'F', 'F#', 'G#', 'A#', 'C', 'D'] }, // C is B#, D is Cx
-        { name: 'E Melodic Minor', notes: ['E', 'F#', 'G', 'A', 'B', 'C#', 'D#'] },
-        { name: 'F Melodic Minor', notes: ['F', 'G', 'G#', 'A#', 'C', 'D', 'E'] },
-        { name: 'F# Melodic Minor', notes: ['F#', 'G#', 'A', 'B', 'C#', 'D#', 'F'] }, // F is E#
-        { name: 'G Melodic Minor', notes: ['G', 'A', 'A#', 'C', 'D', 'E', 'F#'] }, // Likely already exists
-        { name: 'G# Melodic Minor', notes: ['G#', 'A#', 'B', 'C#', 'D#', 'F', 'G'] }, // F is E#, G is Fx#
-        { name: 'A Melodic Minor', notes: ['A', 'B', 'C', 'D', 'E', 'F#', 'G#'] }, // Likely already exists
-        { name: 'A# Melodic Minor', notes: ['A#', 'C', 'C#', 'D#', 'F', 'G', 'A'] }, // G is Fx#
-        { name: 'B Melodic Minor', notes: ['B', 'C#', 'D', 'E', 'F#', 'G#', 'A#'] },
-
-        // --- Pentatonic Scales ---
-        { name: 'C Major Pentatonic', notes: ['C', 'D', 'E', 'G', 'A'] },
-        { name: 'G Major Pentatonic', notes: ['G', 'A', 'B', 'D', 'E'] },
-        { name: 'F Major Pentatonic', notes: ['F', 'G', 'A', 'C', 'D'] },
-        { name: 'A Minor Pentatonic', notes: ['A', 'C', 'D', 'E', 'G'] },
-        { name: 'E Minor Pentatonic', notes: ['E', 'G', 'A', 'B', 'D'] },
-        { name: 'C Minor Pentatonic', notes: ['C', 'D#', 'F', 'G', 'A#'] }, // D#=Eb, A#=Bb
-        { name: 'C Egyptian (Suspended Pentatonic)', notes: ['C', 'D', 'F', 'G', 'A#'] }, // A#=Bb
-        { name: 'F Egyptian (Suspended Pentatonic)', notes: ['F', 'G', 'A#', 'C', 'D'] }, // A#=Bb
-
-        // --- Blues Scales ---
-        { name: 'C Minor Blues', notes: ['C', 'D#', 'F', 'F#', 'G', 'A#'] }, // D#=Eb, F#=Gb(blue note), A#=Bb
-        { name: 'A Minor Blues', notes: ['A', 'C', 'D', 'D#', 'E', 'G'] }, // D#=Eb(blue note)
-        { name: 'E Minor Blues', notes: ['E', 'G', 'A', 'A#', 'B', 'D'] }, // A#=Bb(blue note)
-        { name: 'C Major Blues', notes: ['C', 'D', 'D#', 'E', 'G', 'A'] }, // D#=Eb(blue note)
-        { name: 'G Major Blues', notes: ['G', 'A', 'A#', 'B', 'D', 'E'] }, // A#=Bb(blue note)
-        { name: 'A Major Blues', notes: ['A', 'B', 'C', 'C#', 'E', 'F#'] }, // C=Cb(blue note)
-
-        // --- Symmetric Scales ---
-        { name: 'Chromatic', notes: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] },
-        { name: 'C Whole Tone', notes: ['C', 'D', 'E', 'F#', 'G#', 'A#'] },
-        { name: 'C# Whole Tone', notes: ['C#', 'D#', 'F', 'G', 'A', 'B'] }, // F=E#
-        { name: 'C Diminished (WH)', notes: ['C', 'D', 'D#', 'F', 'F#', 'G#', 'A', 'B'] }, // D#=Eb, F#=Gb, G#=Ab
-        { name: 'C Diminished (HW)', notes: ['C', 'C#', 'D#', 'E', 'F#', 'G', 'A', 'A#'] }, // C#=Db, D#=Eb, F#=Gb, A#=Bb
-
-        // --- Bebop Scales ---
-        { name: 'C Bebop Major', notes: ['C', 'D', 'E', 'F', 'G', 'G#', 'A', 'B'] }, // G#=Ab passing tone
-        { name: 'C Bebop Dominant', notes: ['C', 'D', 'E', 'F', 'G', 'A', 'A#', 'B'] }, // A#=Bb (Mixolydian + Major 7th)
-        { name: 'C Bebop Minor (Dorian)', notes: ['C', 'D', 'D#', 'E', 'F', 'G', 'A', 'A#'] }, // D#=Eb, A#=Bb (Dorian + Major 3rd)
-        { name: 'A Bebop Minor', notes: ['A', 'B', 'C', 'C#', 'D', 'E', 'F#', 'G'] }, // (Aeolian + #4/b5) - Different flavors exist
-
-        // --- Modes of Harmonic Minor ---
-        { name: 'C Locrian #6', notes: ['C', 'C#', 'D#', 'F', 'F#', 'A', 'A#'] },
-        { name: 'C Ionian #5', notes: ['C', 'D', 'E', 'F', 'G#', 'A', 'B'] },
-        { name: 'C Dorian #4', notes: ['C', 'D', 'D#', 'F#', 'G', 'A', 'A#'] },
-        { name: 'C Phrygian Dominant', notes: ['C', 'C#', 'E', 'F', 'G', 'G#', 'A#'] },
-        { name: 'C Lydian #2', notes: ['C', 'D#', 'E', 'F#', 'G', 'A#', 'B'] },
-        { name: 'C Super Locrian bb7', notes: ['C', 'C#', 'D#', 'E', 'F#', 'G#', 'A'] },
-
-        // --- Modes of Melodic Minor ---
-        { name: 'C Dorian b2', notes: ['C', 'C#', 'D#', 'F', 'G', 'A', 'A#'] },
-        { name: 'C Lydian Augmented', notes: ['C', 'D', 'E', 'F#', 'G#', 'A', 'B'] },
-        { name: 'C Lydian Dominant', notes: ['C', 'D', 'E', 'F#', 'G', 'A', 'A#'] },
-        { name: 'C Mixolydian b6', notes: ['C', 'D', 'E', 'F', 'G', 'G#', 'A#'] },
-        { name: 'C Locrian #2', notes: ['C', 'D', 'D#', 'F', 'F#', 'G#', 'A#'] },
-        { name: 'C Altered Scale', notes: ['C', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'] },
-
-        // --- "Exotic" / World / Other Scales ---
-        { name: 'C Hungarian Minor', notes: ['C', 'D', 'D#', 'F#', 'G', 'G#', 'B'] },
-        { name: 'C Hungarian Major', notes: ['C', 'D#', 'E', 'F#', 'G', 'A', 'A#'] },
-        { name: 'C Neapolitan Minor', notes: ['C', 'C#', 'D#', 'F', 'G', 'G#', 'B'] },
-        { name: 'C Neapolitan Major', notes: ['C', 'C#', 'D#', 'F', 'G', 'A', 'B'] },
-        { name: 'C Persian', notes: ['C', 'C#', 'E', 'F', 'F#', 'G#', 'B'] },
-        { name: 'C Enigmatic', notes: ['C', 'C#', 'E', 'F#', 'G#', 'A#', 'B'] },
-        { name: 'C Spanish Gypsy', notes: ['C', 'C#', 'E', 'F', 'G', 'G#', 'A#'] },
-        { name: 'C Spanish 8 Tone', notes: ['C', 'C#', 'D#', 'E', 'F', 'F#', 'G#', 'A#'] },
-        { name: 'C Arabian', notes: ['C', 'D', 'E', 'F', 'F#', 'G#', 'A#'] },
-        { name: 'C Balinese (Pelog)', notes: ['C', 'C#', 'D#', 'G', 'G#'] },
-        { name: 'C Japanese (Insen)', notes: ['C', 'C#', 'F', 'G', 'A#'] },
-        { name: 'C Japanese (Hirajoshi)', notes: ['C', 'D', 'D#', 'G', 'G#'] },
-        { name: 'C Japanese (Iwato)', notes: ['C', 'C#', 'F', 'F#', 'A#'] },
-        { name: 'C Prometheus', notes: ['C', 'D', 'E', 'F#', 'A', 'A#'] },
-        { name: 'C Scriabin', notes: ['C', 'C#', 'E', 'F#', 'A', 'A#'] },
-        { name: 'C Tritone', notes: ['C', 'C#', 'E', 'F#', 'G#', 'A#'] },
-        { name: 'C Two-Semitone Tritone', notes: ['C', 'C#', 'D', 'F#', 'G', 'G#'] },
-        { name: 'C Augmented', notes: ['C', 'D#', 'E', 'G', 'G#', 'B'] },
-        { name: 'C Double Harmonic Major', notes: ['C', 'C#', 'E', 'F', 'G', 'G#', 'B'] },
+        // --- "Exotic" / world / other ---
+        { type: 'Hungarian Minor', formula: [0, 2, 3, 6, 7, 8, 11] },
+        { type: 'Hungarian Major', formula: [0, 3, 4, 6, 7, 9, 10] },
+        { type: 'Hungarian Gypsy', formula: [0, 2, 3, 6, 7, 8, 10] },
+        { type: 'Neapolitan Minor', formula: [0, 1, 3, 5, 7, 8, 11] },
+        { type: 'Neapolitan Major', formula: [0, 1, 3, 5, 7, 9, 11] },
+        { type: 'Double Harmonic Major (Byzantine)', formula: [0, 1, 4, 5, 7, 8, 11] },
+        { type: 'Persian', formula: [0, 1, 4, 5, 6, 8, 11] },
+        { type: 'Enigmatic', formula: [0, 1, 4, 6, 8, 10, 11] },
+        { type: 'Spanish 8 Tone', formula: [0, 1, 3, 4, 5, 6, 8, 10] },
+        { type: 'Arabian (Major Locrian)', formula: [0, 2, 4, 5, 6, 8, 10] },
+        { type: 'Leading Whole Tone', formula: [0, 2, 4, 6, 8, 10, 11] },
+        { type: 'Prometheus', formula: [0, 2, 4, 6, 9, 10] },
+        { type: 'Scriabin', formula: [0, 1, 4, 7, 9, 10] },
+        { type: 'Tritone', formula: [0, 1, 4, 6, 7, 10] },
+        { type: 'Two-Semitone Tritone', formula: [0, 1, 2, 6, 7, 8] },
+        { type: 'Balinese (Pelog)', formula: [0, 1, 3, 7, 8] },
+        { type: 'Japanese (Insen)', formula: [0, 1, 5, 7, 10] },
+        { type: 'Japanese (Hirajoshi)', formula: [0, 2, 3, 7, 8] },
+        { type: 'Japanese (Iwato)', formula: [0, 1, 5, 6, 10] },
+        { type: 'Japanese (Kumoi)', formula: [0, 2, 3, 7, 9] },
+        { type: 'Japanese (Yo)', formula: [0, 2, 5, 7, 9] },
+        { type: 'Chinese', formula: [0, 4, 6, 7, 11] },
     ];
+
+    // Generate every scale type in all 12 keys (root first in `notes`), plus Chromatic
+    const scales = [{ id: 'chromatic', type: 'Chromatic', root: null, notes: [...notesOrder] }];
+    scaleTypes.forEach(({ type, formula }) => {
+        notesOrder.forEach((root, rootIndex) => {
+            scales.push({
+                id: `${root}|${type}`,
+                type,
+                root,
+                notes: formula.map(semitones => notesOrder[(rootIndex + semitones) % 12]),
+            });
+        });
+    });
 
     // --- State ---
     let selectedNotes = new Set();
@@ -251,6 +195,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return sharpToFlat[internalNote];
         }
         return internalNote; // Return sharp name or natural name
+    }
+
+    // Scale name with its root in the current sharps/flats preference
+    function scaleDisplayName(scale) {
+        return scale.root ? `${getNoteDisplayName(scale.root)} ${scale.type}` : scale.type;
+    }
+
+    // Text the filter box searches: both root spellings, so "Bb" and "A#" both work
+    function scaleSearchText(scale) {
+        if (!scale.root) return scale.type.toLowerCase();
+        const flat = sharpToFlat[scale.root];
+        return `${scale.root} ${scale.type} ${flat ? flat + ' ' + scale.type : ''}`.toLowerCase();
     }
 
     // Generate Piano Keys
@@ -323,8 +279,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle Scale Clicks
     function handleScaleClick(event) {
-        const scaleName = event.target.dataset.scaleName;
-        const selectedScale = scales.find(s => s.name === scaleName);
+        const scaleId = event.target.dataset.scaleId;
+        const selectedScale = scales.find(s => s.id === scaleId);
 
         if (selectedScale) {
             clearAllSelections();
@@ -447,12 +403,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (filterText) {
-            matchingScales = matchingScales.filter(scale => scale.name.toLowerCase().includes(filterText));
+            matchingScales = matchingScales.filter(scale => scaleSearchText(scale).includes(filterText));
         }
 
         matchingScales.sort((a, b) => {
-            const nameA = a.name.toLowerCase();
-            const nameB = b.name.toLowerCase();
+            const nameA = scaleDisplayName(a).toLowerCase();
+            const nameB = scaleDisplayName(b).toLowerCase();
             return currentSortOrder === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
         });
 
@@ -465,8 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             matchingScales.forEach(scale => {
                 const li = document.createElement('li');
-                li.textContent = scale.name;
-                li.dataset.scaleName = scale.name;
+                li.textContent = scaleDisplayName(scale);
+                li.dataset.scaleId = scale.id;
                 li.addEventListener('click', handleScaleClick);
                 scaleList.appendChild(li);
             });
@@ -573,6 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('enharmonic', enharmonicPreference);
             updateKeyLabels(); // Update text on piano keys
             updateSelectedNotesDisplay(); // Update text in the selected notes field
+            renderScaleList(); // Scale names follow the preference too
         });
     });
 

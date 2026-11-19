@@ -13,12 +13,13 @@ A simple, interactive single-page web application designed to help users explore
 *   **Interactive Piano Keyboard:** Displays a standard C-to-B piano octave (including sharps/flats).
 *   **Note Selection:** Click on piano keys to toggle their selection.
 *   **Scale Identification:** Automatically displays a list of all musical scales that contain the currently selected notes.
+*   **805 Scales:** 67 scale types in all 12 keys (plus Chromatic): the major modes, harmonic minor, melodic minor and harmonic major with all their modes, pentatonics, hexatonics, blues, bebop, symmetric (whole tone, diminished, augmented) and many world scales. Each type is defined once by its interval formula and generated in every key.
     *   Shows all scales if no notes are selected.
 *   **Scale Filtering:** Filter the list of scales by name using the search input.
 *   **Scale Sorting:** Sort the displayed scale list alphabetically (A-Z or Z-A).
 *   **Scale Selection:** Click on a scale name in the list to instantly select only the notes belonging to that scale on the keyboard.
 *   **Selected Notes Display:** Shows the currently selected notes (sorted chromatically) in a text field for easy reference or copying.
-*   **Enharmonic Toggle:** Switch the display of accidentals (black keys and selected notes) between sharps (#) and flats (b).
+*   **Enharmonic Toggle:** Switch the display of accidentals (black keys, selected notes and scale names) between sharps (#) and flats (b). The scale filter matches either spelling, e.g. `Bb` or `A#`.
 *   **Audio Playback (Web Audio API):**
     *   Play the selected notes simultaneously as a **Chord**.
     *   Play the selected notes sequentially as an **Arpeggio** (ascending or descending).
@@ -69,7 +70,7 @@ A simple, interactive single-page web application designed to help users explore
 *   **`style.css`**: Contains all the CSS rules for styling the application, including keyboard appearance, layout, colors (with light/dark mode variables), and responsiveness.
 *   **`script.js`**: Contains all the JavaScript logic, including:
     *   Keyboard generation and event handling.
-    *   Scale data (names and notes).
+    *   Scale formulas, generated in all 12 keys.
     *   Scale filtering and display logic.
     *   Playback, keyboard shortcuts and MIDI input.
     *   Enharmonic preference handling.
@@ -89,9 +90,9 @@ A simple, interactive single-page web application designed to help users explore
 
 ## Potential Future Enhancements
 
-*   **Complete Interval Data:** The `script.js` file is structured to potentially display the interval pattern (e.g., W-W-H...) for each scale, but the interval data needs to be manually added to the `scales` array for most entries.
+*   **Interval Display:** Show each scale's interval pattern (W-W-H...) and degrees (1 2 b3...), derived from its formula.
 *   **Multi-Octave Display/Playback:** Extend the keyboard and playback to cover more than one octave.
-*   **More Accurate Enharmonics:** Update the `scales` data itself to use the theoretically correct sharps or flats for each scale key signature, rather than just relying on the display toggle.
+*   **Key-Signature Spelling:** Spell notes per key signature (e.g. E# in F# major) rather than by the global sharps/flats toggle.
 *   **Chord Identification:** Add logic to identify common chord names based on selected notes.
 *   **Sampled Instruments:** Add real piano samples alongside the synthesized instruments.
 *   **Shareable Links:** Encode the selection in the URL.

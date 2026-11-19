@@ -8,15 +8,22 @@
 </head>
 <body> <!-- Body will get the dark-mode class -->
 <div class="app-container">
-  <!-- Theme Toggle Button -->
-  <button id="theme-toggle" title="Toggle Light/Dark Mode">☀️</button>
-  <!-- End Theme Toggle -->
+  <!-- Top-right toggles: 2D/3D view and light/dark theme -->
+  <div class="top-toggles">
+    <button id="view-toggle" title="Switch to 3D keyboard">3D</button>
+    <button id="theme-toggle" title="Toggle Light/Dark Mode">☀️</button>
+  </div>
+  <!-- End Toggles -->
 
   <h1>Piano Scale Finder</h1>
 
   <div id="piano-keyboard">
     <!-- Piano keys will be generated here by JavaScript -->
   </div>
+
+  <!-- 3D keyboard (three.js, loaded on demand) -->
+  <div id="piano-3d" hidden></div>
+  <p id="piano-3d-hint" hidden>Drag to orbit · scroll to zoom · click keys to select</p>
 
   <!-- Selected Notes Display -->
   <div class="selected-notes-display">
@@ -62,6 +69,7 @@
   </div>
 </div>
 
+<script src="piano3d.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

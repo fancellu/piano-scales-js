@@ -35,6 +35,10 @@
     --box-shadow: 0 4px 8px var(--shadow-color);
 }
 
+[hidden] {
+    display: none !important;
+}
+
 /* Dark Mode Overrides */
 body.dark-mode {
     --bg-primary: #212529;         /* Dark page background */
@@ -91,11 +95,37 @@ body {
     transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
 }
 
-/* Theme Toggle Button Styling */
-#theme-toggle {
+/* Top-right toggle buttons */
+.top-toggles {
     position: absolute;
     top: 10px;
     right: 15px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+#view-toggle {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.95em;
+    padding: 5px 9px;
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+#view-toggle:hover {
+    background: var(--key-selected-bg);
+    color: var(--key-selected-text);
+}
+#view-toggle.active {
+    box-shadow: 0 0 0 2px var(--key-selected-bg);
+}
+
+/* Theme Toggle Button Styling */
+#theme-toggle {
     background: none;
     border: 1px solid transparent; /* Make border transparent initially */
     border-radius: 5px;
@@ -215,6 +245,44 @@ h1, h2, h3 {
     /* Shadow might need dark mode adjustment */
     box-shadow: -1px -1px 2px rgba(255,255,255,0.2) inset, 0 -2px 2px 3px rgba(0,0,0,0.6) inset, 0 1px 2px rgba(0,0,0,0.5);
     color: var(--key-selected-text);        /* Use variable */
+}
+
+/* Key flash while a note is sounding */
+.key.playing {
+    background-color: var(--root-note-border) !important;
+    color: #fff;
+}
+
+/* --- 3D Keyboard --- */
+#piano-3d {
+    position: relative;
+    width: 100%;
+    height: 340px;
+    margin: 30px auto 6px;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--box-shadow);
+}
+#piano-3d canvas {
+    display: block;
+    touch-action: none;
+}
+#piano-3d.loading::after {
+    content: 'Loading 3D…';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+}
+#piano-3d-hint {
+    text-align: center;
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    margin: 0 0 10px;
 }
 
 /* Precise Positioning for Black Keys */

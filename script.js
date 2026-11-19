@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const enharmonicRadios = document.querySelectorAll('input[name="enharmonic"]'); // Get radio buttons
     const themeToggleButton = document.getElementById('theme-toggle');
+    const viewToggleButton = document.getElementById('view-toggle');
+    const piano3dContainer = document.getElementById('piano-3d');
+    const piano3dHint = document.getElementById('piano-3d-hint');
 
     // --- Data ---
     const notesOrder = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -192,6 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedNotes = new Set();
     let currentSortOrder = 'asc';
     let enharmonicPreference = 'sharp'; // Default preference ('sharp' or 'flat')
+    let currentRoot = null; // Root note of the last clicked scale (internal sharp notation)
+    let currentTheme = 'light';
+    let is3D = false;
 
     // --- Audio Context ---
     let audioContext = null;
@@ -229,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentTheme = theme;
         localStorage.setItem('theme', theme); // Save preference
+        if (window.Piano3D) window.Piano3D.setTheme(theme);
     }
 
     function toggleTheme() {
@@ -277,13 +284,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle Key Clicks
     function handleKeyClick(event) {
-        const note = event.target.dataset.note; // Use internal sharp notation
+        toggleNote(event.target.dataset.note); // Use internal sharp notation
+    }
+
+    // Toggle a note's selection (shared by the 2D and 3D keyboards)
+    function toggleNote(note) {
+        const keyElement = pianoKeyboard.querySelector(`.key[data-note="${note}"]`);
         if (selectedNotes.has(note)) {
             selectedNotes.delete(note);
-            event.target.classList.remove('selected');
+            if (keyElement) keyElement.classList.remove('selected');
         } else {
             selectedNotes.add(note);
-            event.target.classList.add('selected');
+            if (keyElement) keyElement.classList.add('selected');
         }
         clearRootNoteHighlight(); // Clear root highlight on manual selection change
         renderScaleList();
@@ -313,6 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
             clearRootNoteHighlight();
             // Convert root note from data to internal sharp representation for highlighting
             const internalRootNote = noteNameToInternal(selectedScale.notes[0]);
+            currentRoot = internalRootNote;
             const rootKeyElement = pianoKeyboard.querySelector(`.key[data-note="${internalRootNote}"]`);
             if (rootKeyElement) {
                 rootKeyElement.classList.add('root-note');
@@ -334,7 +347,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Clear only root note highlight
     function clearRootNoteHighlight() {
+        currentRoot = null;
         document.querySelectorAll('.key.root-note').forEach(k => k.classList.remove('root-note'));
+    }
+
+    // Push the current selection/root/labels to the 3D view (if active)
+    function syncViews() {
+        if (!is3D || !window.Piano3D) return;
+        const labels = {};
+        notesOrder.forEach(n => { labels[n] = getNoteDisplayName(n); });
+        window.Piano3D.update({ selected: Array.from(selectedNotes), root: currentRoot, labels });
+    }
+
+    // Briefly highlight a key while it sounds (2D and 3D)
+    function pulseKey(note, delayMs, durationMs) {
+        setTimeout(() => {
+            const keyElement = pianoKeyboard.querySelector(`.key[data-note="${note}"]`);
+            if (keyElement) {
+                keyElement.classList.add('playing');
+                setTimeout(() => keyElement.classList.remove('playing'), durationMs);
+            }
+            if (is3D && window.Piano3D) window.Piano3D.pulse(note);
+        }, Math.max(0, delayMs));
+    }
+
+    // Switch between the flat 2D keyboard and the three.js 3D keyboard
+    function apply3D(on) {
+        is3D = on;
+        localStorage.setItem('view3d', on ? '1' : '0');
+        viewToggleButton.classList.toggle('active', on);
+        viewToggleButton.textContent = on ? '2D' : '3D';
+        viewToggleButton.title = on ? 'Switch to 2D keyboard' : 'Switch to 3D keyboard';
+
+        if (!on) {
+            if (window.Piano3D) window.Piano3D.disable();
+            piano3dContainer.hidden = true;
+            piano3dHint.hidden = true;
+            pianoKeyboard.hidden = false;
+            return;
+        }
+
+        if (!window.Piano3D) { apply3D(false); return; }
+        pianoKeyboard.hidden = true;
+        piano3dContainer.hidden = false;
+        piano3dHint.hidden = false;
+        piano3dContainer.classList.add('loading');
+        window.Piano3D.setTheme(currentTheme);
+        syncViews();
+        window.Piano3D.enable(piano3dContainer, { toggleNote })
+            .then(() => piano3dContainer.classList.remove('loading'))
+            .catch(err => {
+                console.error(err);
+                piano3dContainer.classList.remove('loading');
+                apply3D(false);
+                piano3dHint.hidden = false;
+                piano3dHint.textContent = 'Could not load three.js (offline?) — staying in 2D.';
+                setTimeout(() => {
+                    piano3dHint.hidden = !is3D;
+                    piano3dHint.textContent = 'Drag to orbit · scroll to zoom · click keys to select';
+                }, 4000);
+            });
     }
 
 
@@ -388,6 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Convert internal notes to display names for the field
         const displayNotes = sortedSelectedInternal.map(note => getNoteDisplayName(note));
         selectedNotesField.value = displayNotes.join(', ');
+        syncViews();
     }
 
     // Play a single note with basic envelope
@@ -442,6 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const freq = noteFrequencies[note];
             if (freq) {
                 playNote(freq, duration, now);
+                pulseKey(note, 0, 400);
             }
         });
     }
@@ -466,6 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (freq) {
                 const startTime = now + index * intervalSeconds;
                 playNote(freq, noteDuration, startTime);
+                pulseKey(note, index * speedMs, Math.max(80, speedMs * 0.9));
             }
         });
     }
@@ -493,6 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     themeToggleButton.addEventListener('click', toggleTheme);
+    viewToggleButton.addEventListener('click', () => apply3D(!is3D));
     playChordButton.addEventListener('click', playChord);
     playArpUpButton.addEventListener('click', () => playArpeggio('up'));
     playArpDownButton.addEventListener('click', () => playArpeggio('down'));
@@ -515,4 +591,5 @@ document.addEventListener('DOMContentLoaded', () => {
     generateKeyboard();
     renderScaleList(); // Initial render with all scales
     updateSelectedNotesDisplay(); // Initial render for selected notes field
+    if (localStorage.getItem('view3d') === '1') apply3D(true);
 });

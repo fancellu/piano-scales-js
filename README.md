@@ -19,13 +19,20 @@ A simple, interactive single-page web application designed to help users explore
     *   Adjust the playback speed for arpeggios.
 *   **Light/Dark Mode:** Toggle between light and dark themes for visual preference. The setting is saved in your browser's `localStorage`.
 *   **Root Note Highlight:** When a scale is selected from the list, its root note is visually indicated on the keyboard.
+*   **3D Mode (three.js):** Click the `3D` button (top-right) to swap the flat keyboard for a 3D one:
+    *   Selected keys sink and glow, the root note glows orange with a floating marker orb.
+    *   Keys bounce in time with chord/arpeggio playback.
+    *   A floating 12-note "pitch-class ring" draws the selected notes as a polygon — each scale's shape.
+    *   Drag to orbit, scroll to zoom, click keys to select. The view choice is remembered.
+    *   three.js is loaded from a CDN only when 3D mode is first enabled (needs internet; falls back to 2D otherwise).
 
 ## How to Use
 
-1.  **Download:** Ensure you have the following three files in the same directory:
+1.  **Download:** Ensure you have the following files in the same directory:
     *   `piano_scales.html`
     *   `style.css`
     *   `script.js`
+    *   `piano3d.js`
 2.  **Open:** Open the `piano_scales.html` file in a modern web browser (e.g., Chrome, Firefox, Safari, Edge) that supports the Web Audio API for playback features.
 3.  **Interact:**
     *   Click piano keys to select/deselect notes.
@@ -51,6 +58,7 @@ A simple, interactive single-page web application designed to help users explore
     *   Audio playback using the Web Audio API.
     *   Enharmonic preference handling.
     *   Theme switching and `localStorage` persistence.
+*   **`piano3d.js`**: The optional three.js 3D keyboard view (lazy-loads three.js, exposes `window.Piano3D`).
 
 ## Technologies Used
 
@@ -58,6 +66,7 @@ A simple, interactive single-page web application designed to help users explore
 *   CSS3 (including CSS Variables for theming)
 *   JavaScript (ES6+)
 *   Web Audio API
+*   [three.js](https://threejs.org/) r147 (3D mode, loaded on demand from jsDelivr)
 
 ## Potential Future Enhancements
 

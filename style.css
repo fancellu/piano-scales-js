@@ -520,3 +520,42 @@ h1 {
     gap: 5px;
     cursor: pointer;
 }
+
+/* --- MIDI Input --- */
+.midi-controls select {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9em;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+.midi-controls button:disabled {
+    opacity: 0.7;
+    cursor: default;
+}
+.midi-status {
+    flex-basis: 100%;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+.midi-status.ok::before {
+    content: '● ';
+    color: #2e9e5b;
+}
+.midi-status.warn::before {
+    content: '▲ ';
+    color: var(--root-note-border);
+}
+.playback-controls label {
+    margin-left: 4px;
+    margin-right: 0;
+}
+.playback-controls input[type="number"] {
+    width: 64px;
+}
+.playback-controls label.speed {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}

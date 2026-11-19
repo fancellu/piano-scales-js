@@ -48,8 +48,16 @@
         <label class="from-root" title="Start arpeggios on the chosen scale's root and finish on the root an octave up">
           <input type="checkbox" id="arp-from-root" checked> From root
         </label>
-        <label for="playback-speed">Note (ms):</label>
-        <input type="number" id="playback-speed" value="200" min="50" max="1000" step="50">
+        <label class="speed" title="Milliseconds per arpeggio note">
+          <input type="number" id="playback-speed" value="200" min="50" max="1000" step="50"> ms
+        </label>
+      </div>
+
+      <div class="playback-controls midi-controls">
+        <h2>MIDI Input</h2>
+        <button id="midi-connect" title="Listen to a connected MIDI keyboard">Connect MIDI</button>
+        <label class="from-root" title="Play MIDI notes at their real pitch while held (otherwise a short click sound)"><input type="checkbox" id="midi-sound" checked> MIDI sound</label>
+        <span id="midi-status" class="midi-status">Not connected</span>
       </div>
     </div>
 

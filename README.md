@@ -19,6 +19,10 @@ A simple, interactive single-page web application designed to help users explore
     *   Adjust the playback speed for arpeggios.
 *   **Light/Dark Mode:** Toggle between light and dark themes for visual preference. The setting is saved in your browser's `localStorage`.
 *   **Root Note Highlight:** When a scale is selected from the list, its root note is visually indicated on the keyboard.
+*   **MIDI Input (Web MIDI API, Chrome/Edge):** Click **Connect MIDI** to play a MIDI keyboard into the app.
+    *   Each key press toggles that note, exactly like clicking it.
+    *   Optional sound at real pitch with velocity and sustain-pedal support; devices can be hot-plugged.
+*   **Key Feedback Sound:** Clicking a key (2D or 3D) plays that note.
 *   **3D Mode (three.js):** Click the `3D` button (top-right) to swap the flat keyboard for a 3D one:
     *   Selected keys sink and glow, the root note glows orange with a floating marker orb.
     *   Keys bounce in time with chord/arpeggio playback.

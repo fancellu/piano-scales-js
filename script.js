@@ -288,8 +288,13 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleNote(event.target.dataset.note); // Use internal sharp notation
     }
 
-    // Toggle a note's selection (shared by the 2D and 3D keyboards)
-    function toggleNote(note) {
+    // Toggle a note's selection (shared by the 2D/3D keyboards and MIDI).
+    // Plays the note as feedback unless the caller is already sounding it (MIDI).
+    function toggleNote(note, { silent = false } = {}) {
+        if (!silent) {
+            const ctx = getAudioContext();
+            if (ctx && noteFrequencies[note]) playNote(noteFrequencies[note], 0.6, ctx.currentTime);
+        }
         const keyElement = pianoKeyboard.querySelector(`.key[data-note="${note}"]`);
         if (selectedNotes.has(note)) {
             selectedNotes.delete(note);
@@ -298,9 +303,21 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedNotes.add(note);
             if (keyElement) keyElement.classList.add('selected');
         }
-        clearRootNoteHighlight(); // Clear root highlight on manual selection change
+        updateRootAfterToggle();
         renderScaleList();
         updateSelectedNotesDisplay();
+    }
+
+    // Keep the root while it's still selected; otherwise the earliest-selected
+    // remaining note becomes the root (Set keeps insertion order).
+    function updateRootAfterToggle() {
+        const keepRoot = currentRoot && selectedNotes.has(currentRoot);
+        const root = keepRoot ? currentRoot : (selectedNotes.values().next().value || null);
+        clearRootNoteHighlight();
+        if (!root) return;
+        currentRoot = root;
+        const rootKeyElement = pianoKeyboard.querySelector(`.key[data-note="${root}"]`);
+        if (rootKeyElement) rootKeyElement.classList.add('root-note');
     }
 
     // Handle Scale Clicks
@@ -582,6 +599,137 @@ document.addEventListener('DOMContentLoaded', () => {
     playChordButton.addEventListener('click', playChord);
     playArpUpButton.addEventListener('click', () => playArpeggio('up'));
     playArpDownButton.addEventListener('click', () => playArpeggio('down'));
+
+    // --- MIDI Input (Web MIDI API) ---
+    const midiConnectButton = document.getElementById('midi-connect');
+    const midiSoundCheckbox = document.getElementById('midi-sound');
+    const midiStatus = document.getElementById('midi-status');
+
+    let midiAccess = null;
+    const heldMidiNotes = new Set();   // MIDI note numbers physically held down
+    const sustainedMidiNotes = new Set(); // released while the sustain pedal was down
+    let sustainPedal = false;
+    const voices = new Map();          // MIDI note number -> { osc, gain }
+
+    const midiToFreq = (n) => 440 * Math.pow(2, (n - 69) / 12);
+    const midiToNote = (n) => notesOrder[n % 12];
+
+    // Sustained synth voice that lasts until note-off (unlike playNote's fixed length)
+    function startVoice(midiNote, velocity) {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        stopVoice(midiNote, true);
+        const peak = 0.15 + 0.35 * (velocity / 127);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const t = ctx.currentTime;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(midiToFreq(midiNote), t);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(peak, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(peak * 0.5, t + 0.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        voices.set(midiNote, { osc, gain });
+    }
+
+    function stopVoice(midiNote, immediate = false) {
+        const v = voices.get(midiNote);
+        if (!v || !audioContext) return;
+        voices.delete(midiNote);
+        const t = audioContext.currentTime;
+        const release = immediate ? 0.02 : 0.3;
+        v.gain.gain.cancelScheduledValues(t);
+        v.gain.gain.setValueAtTime(v.gain.gain.value, t);
+        v.gain.gain.linearRampToValueAtTime(0, t + release);
+        v.osc.stop(t + release + 0.02);
+    }
+
+    function stopAllVoices() {
+        [...voices.keys()].forEach(n => stopVoice(n));
+        heldMidiNotes.clear();
+        sustainedMidiNotes.clear();
+        sustainPedal = false;
+    }
+
+    function handleMidiNoteOn(midiNote, velocity) {
+        const note = midiToNote(midiNote);
+        if (midiSoundCheckbox.checked) startVoice(midiNote, velocity);
+        sustainedMidiNotes.delete(midiNote);
+        pulseKey(note, 0, 200);
+
+        heldMidiNotes.add(midiNote);
+        // Exactly like a mouse click: toggle just this note. If MIDI sound is off,
+        // fall back to the normal click feedback sound.
+        toggleNote(note, { silent: midiSoundCheckbox.checked });
+    }
+
+    function handleMidiNoteOff(midiNote) {
+        heldMidiNotes.delete(midiNote);
+        if (sustainPedal) {
+            sustainedMidiNotes.add(midiNote);
+        } else {
+            stopVoice(midiNote);
+        }
+    }
+
+    function handleMidiMessage(event) {
+        const [status, data1, data2] = event.data;
+        const type = status & 0xf0;
+        if (type === 0x90 && data2 > 0) {
+            handleMidiNoteOn(data1, data2);
+        } else if (type === 0x80 || (type === 0x90 && data2 === 0)) {
+            handleMidiNoteOff(data1);
+        } else if (type === 0xb0 && data1 === 64) { // Sustain pedal
+            sustainPedal = data2 >= 64;
+            if (!sustainPedal) {
+                sustainedMidiNotes.forEach(n => stopVoice(n));
+                sustainedMidiNotes.clear();
+            }
+        } else if (type === 0xb0 && (data1 === 120 || data1 === 123)) { // All sound/notes off
+            stopAllVoices();
+        }
+    }
+
+    function refreshMidiInputs() {
+        if (!midiAccess) return;
+        const inputs = [...midiAccess.inputs.values()];
+        inputs.forEach(input => { input.onmidimessage = handleMidiMessage; });
+        if (inputs.length === 0) {
+            midiStatus.textContent = 'No MIDI devices found — plug one in';
+            midiStatus.className = 'midi-status warn';
+            stopAllVoices();
+        } else {
+            midiStatus.textContent = 'Listening: ' + inputs.map(i => i.name).join(', ');
+            midiStatus.className = 'midi-status ok';
+        }
+    }
+
+    function connectMidi() {
+        if (!navigator.requestMIDIAccess) {
+            midiStatus.textContent = 'Web MIDI is not supported in this browser (try Chrome or Edge)';
+            midiStatus.className = 'midi-status warn';
+            return;
+        }
+        getAudioContext(); // unlock audio with this click so MIDI notes can sound
+        midiStatus.textContent = 'Requesting MIDI access…';
+        midiStatus.className = 'midi-status';
+        navigator.requestMIDIAccess().then(access => {
+            midiAccess = access;
+            midiAccess.onstatechange = refreshMidiInputs;
+            midiConnectButton.textContent = 'MIDI Connected';
+            midiConnectButton.disabled = true;
+            refreshMidiInputs();
+        }).catch(err => {
+            console.error(err);
+            midiStatus.textContent = 'MIDI access was denied';
+            midiStatus.className = 'midi-status warn';
+        });
+    }
+
+    midiConnectButton.addEventListener('click', connectMidi);
+    midiSoundCheckbox.addEventListener('change', () => { if (!midiSoundCheckbox.checked) stopAllVoices(); });
 
     // Resume AudioContext on first user interaction
     function initAudioContextOnInteraction() {

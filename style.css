@@ -559,3 +559,20 @@ h1 {
     align-items: center;
     gap: 4px;
 }
+
+/* --- Instrument / reverb row --- */
+.sound-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.sound-row select,
+.midi-controls select {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9em;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}

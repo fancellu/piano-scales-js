@@ -1,8 +1,9 @@
-// 3D keyboard view using three.js (loaded lazily from CDN on first use).
+// 3D keyboard view using three.js (ES modules, loaded lazily from CDN on first use).
+// The 'three' and 'three/addons/' specifiers are resolved by the import map in piano_scales.html.
 // Exposes window.Piano3D = { enable, disable, update, pulse, setTheme }.
 (function () {
-    const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js';
-    const ORBIT_URL = 'https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js';
+    let THREE = null;
+    let OrbitControls = null;
 
     const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const WHITE_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
@@ -37,25 +38,27 @@
     let lastInteraction = -Infinity;
     let resizeObserver = null;
 
-    function loadScript(src) {
-        return new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = src;
-            s.async = false;
-            s.onload = resolve;
-            s.onerror = () => reject(new Error('Failed to load ' + src));
-            document.head.appendChild(s);
-        });
-    }
-
     function ensureThree() {
-        if (window.THREE && window.THREE.OrbitControls) return Promise.resolve();
+        if (THREE && OrbitControls) return Promise.resolve();
         if (!loadPromise) {
-            loadPromise = (window.THREE ? Promise.resolve() : loadScript(THREE_URL))
-                .then(() => loadScript(ORBIT_URL))
+            loadPromise = Promise.all([import('three'), import('three/addons/controls/OrbitControls.js')])
+                .then(([threeModule, orbitModule]) => {
+                    THREE = threeModule;
+                    OrbitControls = orbitModule.OrbitControls;
+                })
                 .catch(err => { loadPromise = null; throw err; });
         }
         return loadPromise;
+    }
+
+    // Minimal clock (THREE.Clock is deprecated in recent releases)
+    function makeClock() {
+        const start = performance.now();
+        let last = start;
+        return {
+            getDelta() { const now = performance.now(); const d = (now - last) / 1000; last = now; return d; },
+            getElapsedTime() { return (performance.now() - start) / 1000; },
+        };
     }
 
     // --- Label textures ---
@@ -78,6 +81,7 @@
     function makeLabelMesh(width) {
         const canvas = makeLabelCanvas();
         const tex = new THREE.CanvasTexture(canvas);
+        tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = 4;
         const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
         const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, width / 2), mat);
@@ -98,20 +102,20 @@
     // --- Scene construction ---
     function build() {
         scene = new THREE.Scene();
-        clock = new THREE.Clock();
+        clock = makeClock();
         raycaster = new THREE.Raycaster();
         pointer = new THREE.Vector2();
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.type = THREE.PCFShadowMap;
         container.appendChild(renderer.domElement);
 
         camera = new THREE.PerspectiveCamera(40, 2, 0.1, 100);
         camera.position.set(0, 6.0, 8.3);
 
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls = new OrbitControls(camera, renderer.domElement);
         controls.target.set(0, 0.9, -0.9);
         controls.enableDamping = true;
         controls.dampingFactor = 0.08;
@@ -123,15 +127,15 @@
         controls.addEventListener('end', () => { lastInteraction = clock.getElapsedTime(); });
 
         // Lights
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x404050, 0.45));
-        const sun = new THREE.DirectionalLight(0xffffff, 0.7);
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x404050, 1.4));
+        const sun = new THREE.DirectionalLight(0xffffff, 2.2);
         sun.position.set(4, 9, 6);
         sun.castShadow = true;
         sun.shadow.mapSize.set(1024, 1024);
         Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 1, far: 30 });
         sun.shadow.bias = -0.0005;
         scene.add(sun);
-        const rim = new THREE.DirectionalLight(0x9fc4ff, 0.35);
+        const rim = new THREE.DirectionalLight(0x9fc4ff, 1.1);
         rim.position.set(-6, 4, -6);
         scene.add(rim);
 
@@ -166,7 +170,7 @@
             new THREE.SphereGeometry(0.16, 24, 16),
             new THREE.MeshStandardMaterial({ color: ROOT_COLOR, emissive: ROOT_COLOR, emissiveIntensity: 0.55 })
         );
-        rootLight = new THREE.PointLight(ROOT_COLOR, 0.8, 3);
+        rootLight = new THREE.PointLight(ROOT_COLOR, 2.5, 3, 1);
         rootOrb.add(rootLight);
         rootOrb.visible = false;
         scene.add(rootOrb);

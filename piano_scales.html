@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Piano Scale Finder</title>
   <link rel="stylesheet" href="style.css">
+  <!-- three.js r187 (ES modules) for 3D mode; only fetched when 3D is first enabled -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body> <!-- Body will get the dark-mode class -->
 <div class="app-container">
@@ -42,15 +51,20 @@
 
       <div class="playback-controls">
         <h2>Playback</h2>
-        <button id="play-chord" title="Play selected notes simultaneously">Play Chord</button>
-        <button id="play-arp-up" title="Play selected notes as an ascending arpeggio">Play Arp Up</button>
-        <button id="play-arp-down" title="Play selected notes as a descending arpeggio">Play Arp Down</button>
+        <button id="play-chord" title="Play selected notes simultaneously (C)" aria-keyshortcuts="c">Play <u>C</u>hord</button>
+        <button id="play-arp-up" title="Play selected notes as an ascending arpeggio (U)" aria-keyshortcuts="u">Play Arp <u>U</u>p</button>
+        <button id="play-arp-down" title="Play selected notes as a descending arpeggio (D)" aria-keyshortcuts="d">Play Arp <u>D</u>own</button>
         <label class="from-root" title="Start arpeggios on the chosen scale's root and finish on the root an octave up">
           <input type="checkbox" id="arp-from-root" checked> From root
         </label>
         <label class="speed" title="Milliseconds per arpeggio note">
           <input type="number" id="playback-speed" value="200" min="50" max="1000" step="50"> ms
         </label>
+        <div class="sound-row">
+          <label for="instrument">Sound:</label>
+          <select id="instrument" title="Instrument used for playback, key clicks and MIDI"></select>
+          <label class="from-root" title="Add room reverb"><input type="checkbox" id="reverb" checked> Reverb</label>
+        </div>
       </div>
 
       <div class="playback-controls midi-controls">
@@ -79,6 +93,7 @@
   </div>
 </div>
 
+<script src="synth.js"></script>
 <script src="piano3d.js"></script>
 <script src="script.js"></script>
 </body>

@@ -220,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audioContext && audioContext.state === 'suspended') {
             audioContext.resume();
         }
+        if (audioContext) window.Synth.init(audioContext); // no-op after the first call
         return audioContext;
     }
 
@@ -293,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleNote(note, { silent = false } = {}) {
         if (!silent) {
             const ctx = getAudioContext();
-            if (ctx && noteFrequencies[note]) playNote(noteFrequencies[note], 0.6, ctx.currentTime);
+            if (ctx && noteFrequencies[note]) playNote(noteFrequencies[note], 0.8, ctx.currentTime);
         }
         const keyElement = pianoKeyboard.querySelector(`.key[data-note="${note}"]`);
         if (selectedNotes.has(note)) {
@@ -479,40 +480,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const displayNotes = sortedSelectedInternal.map(note => getNoteDisplayName(note));
         selectedNotesField.value = displayNotes.join(', ');
         syncViews();
+        // Persist selection (insertion order matters for the root rule) and root
+        localStorage.setItem('selectedNotes', JSON.stringify(Array.from(selectedNotes)));
+        localStorage.setItem('rootNote', currentRoot || '');
     }
 
-    // Play a single note with basic envelope
-    function playNote(frequency, durationSeconds, startTime) {
+    // Play a single note with the selected instrument (see synth.js)
+    function playNote(frequency, durationSeconds, startTime, velocity = 90) {
         const ctx = getAudioContext();
         if (!ctx) return;
-
-        const oscillator = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-
-        oscillator.type = 'triangle'; // Slightly softer than sine
-        oscillator.frequency.setValueAtTime(frequency, startTime);
-
-        // Basic ADSR-like envelope
-        const attackTime = 0.01;
-        const decayTime = 0.1;
-        const sustainLevel = 0.3; // Reduced sustain level
-        const releaseTime = 0.3; // Longer release
-        const now = ctx.currentTime > startTime ? ctx.currentTime : startTime; // Ensure 'now' is not in the past
-
-        gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(0.5, now + attackTime); // Attack
-        gainNode.gain.linearRampToValueAtTime(sustainLevel, now + attackTime + decayTime); // Decay to sustain
-        // Hold sustain until duration - releaseTime
-        gainNode.gain.setValueAtTime(sustainLevel, now + durationSeconds - releaseTime);
-        // Release
-        gainNode.gain.linearRampToValueAtTime(0, now + durationSeconds);
-
-
-        oscillator.connect(gainNode);
-        gainNode.connect(ctx.destination);
-
-        oscillator.start(startTime);
-        oscillator.stop(startTime + durationSeconds);
+        window.Synth.play(frequency, durationSeconds, startTime, velocity);
     }
 
     // Sort notes chromatically (using internal sharp notation)
@@ -527,12 +504,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const notesToPlay = Array.from(selectedNotes);
         const now = ctx.currentTime;
-        const duration = 1.5; // Slightly longer duration for chord
+        const duration = 2.0;
+        // Softer per-note velocity for big chords so they don't overload
+        const velocity = Math.max(50, 100 - notesToPlay.length * 5);
 
         notesToPlay.forEach(note => {
             const freq = noteFrequencies[note];
             if (freq) {
-                playNote(freq, duration, now);
+                playNote(freq, duration, now, velocity);
                 pulseKey(note, 0, 400);
             }
         });
@@ -544,8 +523,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ctx || selectedNotes.size === 0) return;
 
         const speedMs = parseInt(playbackSpeedInput.value, 10) || 200;
-        const noteDuration = (speedMs / 1000) * 1.8; // Make notes slightly longer than interval for overlap/legato feel
         const intervalSeconds = speedMs / 1000;
+        // Let notes overlap and ring rather than being chopped off at the next note
+        const noteDuration = intervalSeconds * 1.8 + 0.4;
         const now = ctx.currentTime;
 
         // Ascending sequence of { note, freq }. With "From root", start on the scale
@@ -566,7 +546,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sequence.forEach(({ note, freq }, index) => {
             if (freq) {
                 const startTime = now + index * intervalSeconds;
-                playNote(freq, noteDuration, startTime);
+                const isLast = index === sequence.length - 1;
+                playNote(freq, isLast ? Math.max(noteDuration, 1.5) : noteDuration, startTime);
                 pulseKey(note, index * speedMs, Math.max(80, speedMs * 0.9));
             }
         });
@@ -589,6 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
     enharmonicRadios.forEach(radio => {
         radio.addEventListener('change', (event) => {
             enharmonicPreference = event.target.value;
+            localStorage.setItem('enharmonic', enharmonicPreference);
             updateKeyLabels(); // Update text on piano keys
             updateSelectedNotesDisplay(); // Update text in the selected notes field
         });
@@ -600,6 +582,42 @@ document.addEventListener('DOMContentLoaded', () => {
     playArpUpButton.addEventListener('click', () => playArpeggio('up'));
     playArpDownButton.addEventListener('click', () => playArpeggio('down'));
 
+    // Keyboard shortcuts: C = chord, U = arp up, D = arp down
+    document.addEventListener('keydown', (event) => {
+        if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
+        const target = event.target;
+        // Don't hijack typing in the filter box or other form fields
+        if (target.closest('input[type="text"], input[type="number"], textarea, select, [contenteditable]')) return;
+        const actions = { c: playChord, u: () => playArpeggio('up'), d: () => playArpeggio('down') };
+        const action = actions[event.key.toLowerCase()];
+        if (action) {
+            event.preventDefault();
+            action();
+        }
+    });
+
+    // --- Instrument & reverb ---
+    const instrumentSelect = document.getElementById('instrument');
+    const reverbCheckbox = document.getElementById('reverb');
+    window.Synth.instruments.forEach(({ id, label }) => instrumentSelect.add(new Option(label, id)));
+    instrumentSelect.value = localStorage.getItem('instrument') || 'piano';
+    if (!instrumentSelect.value) instrumentSelect.value = 'piano';
+    reverbCheckbox.checked = localStorage.getItem('reverb') !== '0';
+    window.Synth.setInstrument(instrumentSelect.value);
+    window.Synth.setReverb(reverbCheckbox.checked);
+
+    instrumentSelect.addEventListener('change', () => {
+        window.Synth.setInstrument(instrumentSelect.value);
+        localStorage.setItem('instrument', instrumentSelect.value);
+        // Audition the new sound with a quick C-major arpeggio
+        const ctx = getAudioContext();
+        if (ctx) ['C', 'E', 'G'].forEach((n, i) => playNote(noteFrequencies[n], 1.0, ctx.currentTime + i * 0.12));
+    });
+    reverbCheckbox.addEventListener('change', () => {
+        window.Synth.setReverb(reverbCheckbox.checked);
+        localStorage.setItem('reverb', reverbCheckbox.checked ? '1' : '0');
+    });
+
     // --- MIDI Input (Web MIDI API) ---
     const midiConnectButton = document.getElementById('midi-connect');
     const midiSoundCheckbox = document.getElementById('midi-sound');
@@ -609,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const heldMidiNotes = new Set();   // MIDI note numbers physically held down
     const sustainedMidiNotes = new Set(); // released while the sustain pedal was down
     let sustainPedal = false;
-    const voices = new Map();          // MIDI note number -> { osc, gain }
+    const voices = new Map();          // MIDI note number -> Synth voice
 
     const midiToFreq = (n) => 440 * Math.pow(2, (n - 69) / 12);
     const midiToNote = (n) => notesOrder[n % 12];
@@ -619,31 +637,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = getAudioContext();
         if (!ctx) return;
         stopVoice(midiNote, true);
-        const peak = 0.15 + 0.35 * (velocity / 127);
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const t = ctx.currentTime;
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(midiToFreq(midiNote), t);
-        gain.gain.setValueAtTime(0, t);
-        gain.gain.linearRampToValueAtTime(peak, t + 0.01);
-        gain.gain.exponentialRampToValueAtTime(peak * 0.5, t + 0.4);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(t);
-        voices.set(midiNote, { osc, gain });
+        const voice = window.Synth.noteOn(midiToFreq(midiNote), velocity);
+        if (voice) voices.set(midiNote, voice);
     }
 
     function stopVoice(midiNote, immediate = false) {
         const v = voices.get(midiNote);
-        if (!v || !audioContext) return;
+        if (!v) return;
         voices.delete(midiNote);
-        const t = audioContext.currentTime;
-        const release = immediate ? 0.02 : 0.3;
-        v.gain.gain.cancelScheduledValues(t);
-        v.gain.gain.setValueAtTime(v.gain.gain.value, t);
-        v.gain.gain.linearRampToValueAtTime(0, t + release);
-        v.osc.stop(t + release + 0.02);
+        v.stop(undefined, immediate);
     }
 
     function stopAllVoices() {
@@ -718,18 +720,47 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.requestMIDIAccess().then(access => {
             midiAccess = access;
             midiAccess.onstatechange = refreshMidiInputs;
-            midiConnectButton.textContent = 'MIDI Connected';
-            midiConnectButton.disabled = true;
+            midiConnectButton.textContent = 'Disconnect MIDI';
+            midiConnectButton.title = 'Stop listening to MIDI devices';
+            localStorage.setItem('midi', '1');
             refreshMidiInputs();
+            // Restored on page load without a click: browsers keep audio muted until the first interaction
+            if (audioContext && audioContext.state === 'suspended') {
+                midiStatus.textContent += ' — click anywhere on the page to enable sound';
+            }
         }).catch(err => {
             console.error(err);
             midiStatus.textContent = 'MIDI access was denied';
             midiStatus.className = 'midi-status warn';
+            localStorage.setItem('midi', '0');
         });
     }
 
-    midiConnectButton.addEventListener('click', connectMidi);
-    midiSoundCheckbox.addEventListener('change', () => { if (!midiSoundCheckbox.checked) stopAllVoices(); });
+    function disconnectMidi() {
+        if (midiAccess) {
+            midiAccess.onstatechange = null;
+            midiAccess.inputs.forEach(input => { input.onmidimessage = null; });
+            midiAccess = null;
+        }
+        stopAllVoices();
+        midiConnectButton.textContent = 'Connect MIDI';
+        midiConnectButton.title = 'Listen to a connected MIDI keyboard';
+        midiStatus.textContent = 'Not connected';
+        midiStatus.className = 'midi-status';
+        localStorage.setItem('midi', '0');
+    }
+
+    midiConnectButton.addEventListener('click', () => (midiAccess ? disconnectMidi() : connectMidi()));
+    midiSoundCheckbox.addEventListener('change', () => {
+        if (!midiSoundCheckbox.checked) stopAllVoices();
+        localStorage.setItem('midiSound', midiSoundCheckbox.checked ? '1' : '0');
+    });
+    arpFromRootCheckbox.addEventListener('change', () => {
+        localStorage.setItem('arpFromRoot', arpFromRootCheckbox.checked ? '1' : '0');
+    });
+    playbackSpeedInput.addEventListener('change', () => {
+        localStorage.setItem('playbackSpeed', playbackSpeedInput.value);
+    });
 
     // Resume AudioContext on first user interaction
     function initAudioContextOnInteraction() {
@@ -740,14 +771,42 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('click', initAudioContextOnInteraction, { once: true });
     document.body.addEventListener('keydown', initAudioContextOnInteraction, { once: true });
 
-    // --- Initialisation ---
+    // --- Initialisation (restore saved settings) ---
+    const savedEnharmonic = localStorage.getItem('enharmonic');
+    if (savedEnharmonic === 'sharp' || savedEnharmonic === 'flat') {
+        document.querySelector(`input[name="enharmonic"][value="${savedEnharmonic}"]`).checked = true;
+    }
     enharmonicPreference = document.querySelector('input[name="enharmonic"]:checked').value || 'sharp';
+
+    const savedSpeed = parseInt(localStorage.getItem('playbackSpeed'), 10);
+    if (savedSpeed >= 50 && savedSpeed <= 1000) playbackSpeedInput.value = savedSpeed;
+    if (localStorage.getItem('arpFromRoot') !== null) arpFromRootCheckbox.checked = localStorage.getItem('arpFromRoot') === '1';
+    if (localStorage.getItem('midiSound') !== null) midiSoundCheckbox.checked = localStorage.getItem('midiSound') === '1';
 
     const savedTheme = localStorage.getItem('theme') || 'light'; // Default to light
     applyTheme(savedTheme);
 
     generateKeyboard();
-    renderScaleList(); // Initial render with all scales
-    updateSelectedNotesDisplay(); // Initial render for selected notes field
+    updateKeyLabels(); // apply restored sharps/flats preference
+
+    // Restore selected keys (in their original order) and root
+    try {
+        const savedNotes = JSON.parse(localStorage.getItem('selectedNotes') || '[]');
+        savedNotes.filter(n => notesOrder.includes(n)).forEach(n => {
+            selectedNotes.add(n);
+            const keyElement = pianoKeyboard.querySelector(`.key[data-note="${n}"]`);
+            if (keyElement) keyElement.classList.add('selected');
+        });
+    } catch (e) { /* ignore corrupt saved data */ }
+    const savedRoot = localStorage.getItem('rootNote');
+    if (savedRoot && selectedNotes.has(savedRoot)) {
+        currentRoot = savedRoot;
+        const rootKeyElement = pianoKeyboard.querySelector(`.key[data-note="${savedRoot}"]`);
+        if (rootKeyElement) rootKeyElement.classList.add('root-note');
+    }
+
+    renderScaleList();
+    updateSelectedNotesDisplay();
     if (localStorage.getItem('view3d') === '1') apply3D(true);
+    if (localStorage.getItem('midi') === '1') connectMidi();
 });

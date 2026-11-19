@@ -43,12 +43,12 @@ A simple, interactive single-page web application designed to help users explore
 ## How to Use
 
 1.  **Download:** Ensure you have the following files in the same directory:
-    *   `piano_scales.html`
+    *   `index.html`
     *   `style.css`
     *   `script.js`
     *   `synth.js`
     *   `piano3d.js`
-2.  **Open:** Open the `piano_scales.html` file in a modern web browser (e.g., Chrome, Firefox, Safari, Edge) that supports the Web Audio API for playback features.
+2.  **Open:** Open the `index.html` file in a modern web browser (e.g., Chrome, Firefox, Safari, Edge) that supports the Web Audio API for playback features.
 3.  **Interact:**
     *   Click piano keys to select/deselect notes.
     *   Observe the "Available Scales" list update automatically.
@@ -59,13 +59,13 @@ A simple, interactive single-page web application designed to help users explore
     *   Click **3D** to switch to the 3D keyboard, or **Connect MIDI** to use a MIDI keyboard.
     *   Use the theme toggle button (☀️/🌙) in the top-right corner to switch between light and dark modes.
 
-## Preview
+## Live Demo
 
-[Click here to Preview](http://htmlpreview.github.io/?https://github.com/fancellu/piano-scales-js/blob/main/piano_scales.html)
+**[fancellu.github.io/piano-scales-js](https://fancellu.github.io/piano-scales-js/)** (hosted on GitHub Pages)
 
 ## File Structure
 
-*   **`piano_scales.html`**: Contains the HTML structure of the application, including the layout for the keyboard, controls, and lists. Links to the CSS and JavaScript files.
+*   **`index.html`**: Contains the HTML structure of the application, including the layout for the keyboard, controls, and lists. Links to the CSS and JavaScript files.
 *   **`style.css`**: Contains all the CSS rules for styling the application, including keyboard appearance, layout, colors (with light/dark mode variables), and responsiveness.
 *   **`script.js`**: Contains all the JavaScript logic, including:
     *   Keyboard generation and event handling.

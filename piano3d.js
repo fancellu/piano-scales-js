@@ -1,7 +1,8 @@
-// 3D keyboard view using three.js (ES modules, loaded lazily from CDN on first use).
-// The 'three' and 'three/addons/' specifiers are resolved by the import map in piano_scales.html.
+// 3D keyboard view using three.js r187 (ES modules, loaded lazily from CDN on first use).
 // Exposes window.Piano3D = { enable, disable, update, pulse, setTheme }.
 (function () {
+    const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.187.0/+esm';
+    const ORBIT_URL = 'https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/controls/OrbitControls.js/+esm';
     let THREE = null;
     let OrbitControls = null;
 
@@ -41,7 +42,10 @@
     function ensureThree() {
         if (THREE && OrbitControls) return Promise.resolve();
         if (!loadPromise) {
-            loadPromise = Promise.all([import('three'), import('three/addons/controls/OrbitControls.js')])
+            // Full URLs (no import map) so it also works where import maps are stripped, e.g.
+            // htmlpreview.github.io. jsDelivr's +esm OrbitControls imports '/npm/three@0.187.0/+esm',
+            // the same URL as THREE_URL, so both share a single three.js instance.
+            loadPromise = Promise.all([import(THREE_URL), import(ORBIT_URL)])
                 .then(([threeModule, orbitModule]) => {
                     THREE = threeModule;
                     OrbitControls = orbitModule.OrbitControls;

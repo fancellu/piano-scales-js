@@ -38,7 +38,7 @@ A simple, interactive single-page web application designed to help users explore
     *   Keys bounce in time with chord/arpeggio playback.
     *   A floating 12-note "pitch-class ring" draws the selected notes as a polygon — each scale's shape.
     *   Drag to orbit, scroll to zoom, click keys to select. The view choice is remembered.
-    *   three.js r187 (ES modules via an import map) is loaded from a CDN only when 3D mode is first enabled (needs internet; falls back to 2D otherwise).
+    *   three.js r187 (ES modules from jsDelivr) is loaded from a CDN only when 3D mode is first enabled (needs internet; falls back to 2D otherwise).
 
 ## How to Use
 

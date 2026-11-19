@@ -89,7 +89,7 @@ body {
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     width: 100%;
-    max-width: 800px;
+    max-width: 1280px;
     box-sizing: border-box;
     position: relative; /* Needed for absolute positioning of theme toggle */
     transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
@@ -117,8 +117,8 @@ body {
     transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 #view-toggle:hover {
-    background: var(--key-selected-bg);
-    color: var(--key-selected-text);
+    background: #2a6fd6; /* darker than --key-selected-bg so white text meets 4.5:1 */
+    color: #ffffff;
 }
 #view-toggle.active {
     box-shadow: 0 0 0 2px var(--key-selected-bg);
@@ -450,4 +450,73 @@ h1, h2, h3 {
     margin-left: 10px;
     margin-right: 5px;
     color: var(--text-primary);            /* Use variable */
+}
+/* --- Two-column layout: keyboard + controls left, scale list right --- */
+h1 {
+    margin: 0.2em 0 0.8em;
+}
+.main-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+.left-col, .right-col {
+    min-width: 0;
+}
+.left-col #piano-keyboard,
+.left-col #piano-3d {
+    margin-top: 0;
+}
+.right-col {
+    display: flex;
+    flex-direction: column;
+}
+.right-col .controls {
+    margin-bottom: 12px;
+}
+.right-col #scale-list-container {
+    margin-top: 0;
+    max-height: 520px;
+}
+#scale-list-container h2 {
+    font-size: 1.25em;
+    text-align: left;
+}
+
+.notes-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.notes-row .selected-notes-display {
+    flex: 1 1 240px;
+    margin: 0;
+}
+.notes-row .enharmonic-toggle {
+    margin: 0;
+    padding: 6px 12px;
+}
+
+.playback-controls h2 {
+    font-size: 1.25em;
+    margin: 0 10px 0 0;
+}
+
+@media (max-width: 900px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+    }
+    .right-col #scale-list-container {
+        max-height: 300px;
+    }
+}
+
+.playback-controls label.from-root {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
 }

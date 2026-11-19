@@ -17,55 +17,57 @@
 
   <h1>Piano Scale Finder</h1>
 
-  <div id="piano-keyboard">
-    <!-- Piano keys will be generated here by JavaScript -->
-  </div>
+  <div class="main-layout">
+    <div class="left-col">
+      <div id="piano-keyboard">
+        <!-- Piano keys will be generated here by JavaScript -->
+      </div>
 
-  <!-- 3D keyboard (three.js, loaded on demand) -->
-  <div id="piano-3d" hidden></div>
-  <p id="piano-3d-hint" hidden>Drag to orbit · scroll to zoom · click keys to select</p>
+      <!-- 3D keyboard (three.js, loaded on demand) -->
+      <div id="piano-3d" hidden></div>
+      <p id="piano-3d-hint" hidden>Drag to orbit · scroll to zoom · click keys to select</p>
 
-  <!-- Selected Notes Display -->
-  <div class="selected-notes-display">
-    <label for="selected-notes-field">Selected:</label>
-    <input type="text" id="selected-notes-field" readonly title="Selected notes (sorted chromatically)">
-  </div>
-  <!-- End Selected Section -->
+      <!-- Selected notes + enharmonic preference on one row -->
+      <div class="notes-row">
+        <div class="selected-notes-display">
+          <label for="selected-notes-field">Selected:</label>
+          <input type="text" id="selected-notes-field" readonly title="Selected notes (sorted chromatically)">
+        </div>
+        <div class="enharmonic-toggle">
+          <label>Display As:</label>
+          <label><input type="radio" name="enharmonic" value="sharp" checked> Sharps (#)</label>
+          <label><input type="radio" name="enharmonic" value="flat"> Flats (b)</label>
+        </div>
+      </div>
 
-  <!-- Enharmonic Preference Toggle -->
-  <div class="enharmonic-toggle">
-    <label>Display As:</label>
-    <label>
-      <input type="radio" name="enharmonic" value="sharp" checked> Sharps (#)
-    </label>
-    <label>
-      <input type="radio" name="enharmonic" value="flat"> Flats (b)
-    </label>
-  </div>
-  <!-- End Enharmonic Toggle -->
+      <div class="playback-controls">
+        <h2>Playback</h2>
+        <button id="play-chord" title="Play selected notes simultaneously">Play Chord</button>
+        <button id="play-arp-up" title="Play selected notes as an ascending arpeggio">Play Arp Up</button>
+        <button id="play-arp-down" title="Play selected notes as a descending arpeggio">Play Arp Down</button>
+        <label class="from-root" title="Start arpeggios on the chosen scale's root and finish on the root an octave up">
+          <input type="checkbox" id="arp-from-root" checked> From root
+        </label>
+        <label for="playback-speed">Note (ms):</label>
+        <input type="number" id="playback-speed" value="200" min="50" max="1000" step="50">
+      </div>
+    </div>
 
-  <div class="controls">
-    <input type="text" id="scale-filter" placeholder="Filter scales by name...">
-    <button id="sort-asc">Sort A-Z</button>
-    <button id="sort-desc">Sort Z-A</button>
-    <button id="clear-selection">Clear Selection</button>
-  </div>
+    <div class="right-col">
+      <div class="controls">
+        <input type="text" id="scale-filter" placeholder="Filter scales by name...">
+        <button id="sort-asc">Sort A-Z</button>
+        <button id="sort-desc">Sort Z-A</button>
+        <button id="clear-selection">Clear Selection</button>
+      </div>
 
-  <div id="scale-list-container">
-    <h2 id="scale-list-title">Available Scales</h2>
-    <!-- Removed scale-intervals-display -->
-    <ul id="scale-list">
-      <!-- Scale list will be generated here -->
-    </ul>
-  </div>
-
-  <div class="playback-controls">
-    <h3>Playback</h3>
-    <button id="play-chord" title="Play selected notes simultaneously">Play Chord</button>
-    <button id="play-arp-up" title="Play selected notes as an ascending arpeggio">Play Arp Up</button>
-    <button id="play-arp-down" title="Play selected notes as a descending arpeggio">Play Arp Down</button>
-    <label for="playback-speed">Note (ms):</label>
-    <input type="number" id="playback-speed" value="200" min="50" max="1000" step="50">
+      <div id="scale-list-container">
+        <h2 id="scale-list-title">Available Scales</h2>
+        <ul id="scale-list">
+          <!-- Scale list will be generated here -->
+        </ul>
+      </div>
+    </div>
   </div>
 </div>
 

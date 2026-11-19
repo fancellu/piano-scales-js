@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playArpUpButton = document.getElementById('play-arp-up');
     const playArpDownButton = document.getElementById('play-arp-down');
     const playbackSpeedInput = document.getElementById('playback-speed');
+    const arpFromRootCheckbox = document.getElementById('arp-from-root');
 
     const enharmonicRadios = document.querySelectorAll('input[name="enharmonic"]'); // Get radio buttons
     const themeToggleButton = document.getElementById('theme-toggle');
@@ -530,13 +531,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const intervalSeconds = speedMs / 1000;
         const now = ctx.currentTime;
 
-        let sortedNotes = sortNotesChromatically(selectedNotes);
+        // Ascending sequence of { note, freq }. With "From root", start on the scale
+        // root, shift wrapped notes up an octave and finish on the root an octave up.
+        let sequence = sortNotesChromatically(selectedNotes).map(note => ({ note, freq: noteFrequencies[note] }));
+        if (arpFromRootCheckbox.checked && currentRoot && selectedNotes.has(currentRoot)) {
+            const rootIdx = sequence.findIndex(s => s.note === currentRoot);
+            sequence = [
+                ...sequence.slice(rootIdx),
+                ...sequence.slice(0, rootIdx).map(s => ({ note: s.note, freq: s.freq * 2 })),
+                { note: currentRoot, freq: noteFrequencies[currentRoot] * 2 },
+            ];
+        }
         if (direction === 'down') {
-            sortedNotes.reverse();
+            sequence.reverse();
         }
 
-        sortedNotes.forEach((note, index) => {
-            const freq = noteFrequencies[note];
+        sequence.forEach(({ note, freq }, index) => {
             if (freq) {
                 const startTime = now + index * intervalSeconds;
                 playNote(freq, noteDuration, startTime);
